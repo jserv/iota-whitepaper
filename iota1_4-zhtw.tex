@@ -5,6 +5,7 @@
 \usepackage{amsthm}
 \usepackage{graphicx}
 \usepackage{mathtools}
+\usepackage{CJKutf8}
 
 \addtolength{\textwidth}{1.5cm}
 \hoffset=-0.7cm
@@ -27,388 +28,103 @@
 
 \title{The Tangle}
 \author{Serguei Popov\thanks{
-a.k.a.\ \texttt{mthcl}; author's contact information:
+a.k.a.\ \texttt{mthcl}; 作者聯絡資訊:
 \texttt{serguei.popov@iota.org}}
 %, for \texttt{Jinn Labs}
 }
 \date{October 25, 2017. Version 1.4}
 
+
 \begin{document}
+\begin{CJK}{UTF8}{bkai}
  \maketitle
-\begin{abstract}
-In this paper we analyze the mathematical foundations 
-% that establishes the foundation
-of IOTA, a cryptocurrency for the Internet-of-Things (IoT) industry. 
-The main feature of this novel cryptocurrency is the \emph{tangle}, 
-a directed acyclic graph (DAG) for storing transactions. The tangle
-naturally succeeds the blockchain as its next evolutionary step,
-and offers features that are required to establish a machine-to-machine micropayment
-system. 
-% to be conducted on a global scale. 
+\begin{abstract}  
 
-An essential contribution of this paper is a family of
-Markov Chain Monte Carlo (MCMC) algorithms. These algorithms
-select attachment sites on the tangle for a transaction that
-has just arrived.
+在本論文中我們分析了 IOTA (一種用於物聯網 [IoT] 行業的加密貨幣) 中所使用的主要技術。
+這個新穎的加密貨幣最主要的特點就是 \emph{tangle}，以一個有向無環圖 (DAG) 存放交易資訊。
+tangle 不僅成功的讓區塊鏈往前邁進一步，其特性更是符合 M2M 小額支付系統的需求。
 
-%used as a 
-%backbone of ​iota​ (a cryptocurrency for Internet-of-Things industry). 
-%Its main feature is that, instead of a blockchain,
-%we use a \emph{tangle} (that is, a directed acyclic graph) 
-%for storing transactions.
-%This technology naturally succeeds the blockchain technology as its 
-%next evolutionary step and comes out with features required 
-%for micropayments conducted on a global scale. 
-%
-%In particular, one of contributions of this
-%paper is a family of MCMC algorithms for selecting the sites
-%of the tangle where a newly arrived transaction should
-%be attached.
+一個本篇論的關鍵貢獻是馬可夫鏈蒙地卡羅 (Markov Chain Monte Carlo, MCMC) 演算法。
+這些演算法會為新的交易選擇要接在哪些既有交易之後。                                        
 
-% In this paper we briefly describe the design of the 
-% blockchainless cryptocurrency system \emph{iota}, 
-% and make some calculations regarding the probabilistic 
-% aspects of this system. 
-% In particular, we discuss the question of system's security.
 \end{abstract}
 
-\section{Introduction and description of the system}
+\section{系統介紹與描述}
 \label{s_general}
 
-The rise and success of Bitcoin during the last six
-years proved that blockchain technology has real-world value.
-% the value of blockchain technology.
-However, this technology also has a number of drawbacks
-that prevent it from being used as a generic platform for 
-cryptocurrencies across the globe. One notable drawback is the
-concept of a transaction fee for transactions of any value.
-The importance of micropayments will increase in the 
-rapidly developing IoT industry, and paying a fee that is \emph{larger}
-than the amount of value being transferred is not logical. 
-Furthermore, it is not easy to get rid of fees in the blockchain 
-infrastructure since they serve as an incentive for the creators of
- blocks. This leads to another issue with existing cryptocurrency 
-technology, namely the heterogeneous nature of the system. There
-are two distinct types of participants in the system, those who issue 
-transactions, and those who approve transactions. 
-The design of this system creates unavoidable discrimination of 
-some patricipants, which 
-in turn creates conflicts that make all elements spend resources 
-on conflict resolution. The aforementioned issues justify a search 
-for solutions essentially different from blockchain technology, the 
-basis for Bitcoin and many other cryptocurrencies.
-%, which prevent it to be used as a one and only global platform
-% for cryptocurrencies.
-%Among these drawbacks, an especially notable one is the impossibility
-%of making micro-payments, which have increased importance for the 
-%rapidly developing Internet-of-Things industry.
-%Specifically, in the currently available systems one must
-%pay a fee for making a transaction; 
-%so, transferring a \emph{very} small amount just makes no sense
-%since one would have also to pay the fee which is many 
-%times larger. On the other hand, it is not easy to get rid
-%of the fees since they serve as an incentive for the 
-%creators of the blocks. It should be also observed that
-%existing cryptocurrencies are heterogeneous systems
-%with clear separation of roles (transaction issuers, transaction approvers). 
-%Such systems create unavoidable discrimination of some of their
-%elements which in turn creates conflicts and makes 
-%all elements spend resources on conflict resolution.
-%All this justifies a search for solutions essentially different from
-%the blockchain technology, on which the Bitcoin and many
-%other cryptocurrencies are based.
+在過去的六年中比特幣的興起和成功證明了區塊鏈技術的價值所在。
+然而，這種技術也有許多缺點，阻礙了它成為全球通用的加密貨幣平臺。
+在這些缺點中，特別值得提及的就是無法進行小額支付，而小額支付在迅速發展的物聯網行業中的重要性不斷增加。
+在現今的系統中，使用者須支付手續費才能產生交易；因此，為了支付極少的金費而須再付好幾倍的手續費並不合理。
+且對產生區塊的人而言，手續費就是動機，因此想完全摒除掉並不容易。
+另外亦須關注的是現存的加密貨幣都是清楚區分不同角色(如交易發起者，交易驗證者)的異質 (heterogeneous) 系統。
+這種明顯區分參與者的設計，容易造成資源搶奪與浪費的現象。
+這就需要尋找一些完全不同於比特幣和其他加密貨幣的區塊鏈技術的解決方案。
 
-In this paper we discuss 
-an innovative approach that does not incorporate blockchain 
-technology. This approach is currently being implemented as 
-a cryptocurrency called \emph{iota}~\cite{iota}, which was designed 
-specifically for the IoT industry. The purpose of this paper 
-is to focus on general features of the tangle,
- and to discuss problems that arise 
-when one attempts to get rid of the blockchain and maintain 
-a distributed ledger. The concrete implementation of the iota 
-protocol is not discussed.
-%a blockchainless approach,
-%which is currently being implemented in \emph{iota}~\cite{iota},
-%recently designed as
-%  a cryptocurrency for the Internet-of-Things industry. 
-  
-% An important part of our proposal is a novel cryptographic
-% signing algorithm, that will be described in detail in another
-% whitepaper~\cite{iota_crypto}. 
-% We, however, focus more on general features and problems/difficulties
-% that arise when one attempts to get rid of the blockchain,
-% than on concrete details of iota's implementation. 
-% Of course, any theoretical analysis would be
-%  incomplete without feedback from a working version
-% of such a system; we hope that soon such a feedback would be 
-% available.
-%We, however, focus more on general features and problems/difficulties
-%that arise when one attempts to get rid of the blockchain,
-%than on concrete details of iota's implementation. 
+在本論文中，我們討論了一個創新的方案，但並不能與現今區塊鏈技術相容。
+而此方案正以加密貨幣的形式實做，稱之為\emph{IOTA}~\cite{iota}，針對物聯網工業所設計。
+此篇論文旨在聚焦於 tangle 的一般特性，以及探討當某人試圖捨棄區塊鏈並維護一個分散式帳本時會衍生的問題。
+我們並不會討論 iota 具體的實做細節。
 
-In general, 
-%iota 
-a tangle-based cryptocurrency works in the following way. 
-Instead of the global blockchain, there is a DAG 
-%($=$ directed acyclic graph) 
-that we call the \emph{tangle}. 
-The transactions issued by nodes constitute the site set of the tangle graph,
-which is the ledger for storing transactions.
-% (i.e., the tangle graph is the ledger for storing transactions).
-%Its 
-The edge set of the tangle is obtained in the following way: when a new transaction 
-arrives, it must \emph{approve} 
-two\footnote{This is the simplest approach. One may also study
-similar systems where transactions must approve~$k$ other transactions
-for a general~$k\geq 2$, or 
-%consider more complicated rules
-have an entirely different set of rules.}
- previous transactions. these approvals 
-are represented by directed edges, as shown in
-%on 
-Figure~\ref{f_weights}\footnote{Time always increases from left to right in each figure.}.
-%and others
-If there is 
-%no 
-not a directed edge between transaction~$A$ 
-and transaction~$B$, but there is
-a directed path of length at least two from~$A$ 
-to~$B$, we say that~$A$ \emph{indirectly approves}~$B$.  
-There is also the ``genesis'' 
-transaction, which
-is approved either directly or indirectly
-% (directly or indirectly) 
-by all other
-transactions (Figure~\ref{f_reverse_weights}).
-The genesis is described in the following way.
-In the beginning of the tangle, there was an address with a balance 
-% containing all the tokens. 
-that contained all of the tokens. 
-% Then 
-The genesis transaction 
-sent these tokens to several other ``founder'' addresses. 
-Let us stress that all of the tokens were created in the genesis transaction.
-% (no other tokens will be created),
-No tokens will be created in the future, and there will be no mining
-in the sense that miners receive monetary rewards ``out of thin air''.
-% and there no mining in the sense ``miners receive
-% monetary rewards''.
+在一般情況下，IOTA 按如下方式運行。如前所述，不存在全域的區塊鏈，取而代之的是一個 DAG（有向無環圖），我們稱之為 \emph{Tangle}。
+通過節點發出的所有交易構成了這個 Tangle (存所有交易的帳本) 的集合。
+這個圖的邊是這樣形成的：當一個新的交易產生，它必須\emph{驗證}之前的兩個\footnote{這是最簡單的方法。
+讀者有可能也研讀過相似的系統，規定每筆交易必須驗證 $k$ 筆其他交易，而通常 $k\geq 2$ ，或是採用完全不同的驗證規則。}交易，
+這些驗證關係就通過有向的邊來表示，如圖~\ref{f_weights}\footnote{每張圖的時間軸皆為左至右}所示
+（在圖中，時間走向皆是從左到右）。
+如果從交易~$A$ 到交易~$B$ 之間沒有直接連接的有向邊，而有至少長度為 2 的有向邊路徑存在，我們就說交易~$A$ \emph{間接地驗證}了交易~$B$。
+另外，有一個「創世交易」 (genesis trasaction)，被所有交易直接或間接驗證，如圖~\ref{f_reverse_weights}。
+創世交易的描述如下:在最一開始有一個地址 (address) 擁有全部的 token，接著創世交易會把金錢轉給其他 ``founder'' 的地址。
+我們強調所有的 token 皆是創世交易所產生的(不會再產生新的 token)，而且不會再有「挖礦」就可以收到金錢獎勵的概念了。\leavevmode\\
+術語解釋: \emph{sites}為在 Tangle 圖上的交易;
+\emph{節點}(node) 組成整個網路，同時也是交易發起與驗證者。\leavevmode\\
+整個架構的宗旨如下:使用者必須驗證其他交易才能發起交易，為整個網路的安全性盡一份力。
+我們假設節點檢查認證的交易是否存在衝突。如果節點發現某筆交易與 tangle 的歷史紀錄衝突，便不會直接或者間接的認證具有衝突的交易\footnote{若某節點發起的新交易驗證了衝突交易，
+那麼它便有不被其他節點所驗證的風險，而被摒棄。}。
+隨著交易被越來越多其他交易直接或者間接的所驗證，這個交易就愈會被系統所接受；
+換句話說，要接受一個雙重支付 (double-spending) 交易是極為困難的。
+很重要的是我們不會\emph{強制規定}怎麼選擇要驗證的交易;
+而是我們認為如果大量的節點依循一些「參考」的規則，
+那麼各節點就要分別遵守同類別\footnote{更進一步的論述在~\ref{s_parasite}章節}的規則。這是比較合理的假設，特別是在 IoT，節點是裝載各式韌體的晶片。\leavevmode\\
 
-A quick note on terminology: \emph{sites} are transactions
-represented on the tangle graph. The network 
-is composed
-% by
-of \emph{nodes}; that is, nodes are entities that
-issue and validate transactions. 
-
-% Now, t
-The main idea of the tangle is the following: 
-to issue a transaction, users must work to
-approve other transactions. Therefore, users who
-issue a transaction are contributing 
-to the network's security.
-It is assumed that the nodes check if the approved transactions
-are not conflicting. If a node finds that a transaction is in conflict with 
-the tangle history, the node 
-will not approve the conflicting transaction in either a direct or indirect 
-manner\footnote{If 
-a node issues a new transaction that approves conflicting transactions,
- then it risks that other nodes
-will not approve its new transaction, 
-%and so it
-which will fall into oblivion.}. 
-% and do not approve, directly or indirectly,
-%conflicting transactions
-
-As a transaction 
-% gets more and more (direct or indirect) 
-receives additional 
-approvals, it is accepted by the system with a higher level of confidence.
-In other words, 
-it will be 
-% more 
-difficult 
-%(or even practically impossible) 
-to make the system 
-accept a double-spending transaction.
-It is important to observe that we do not \emph{impose}
-any rules for choosing which transactions a node will approve.
-% rather
-Instead, we argue that if a large number of 
-%other 
-nodes follow some ``reference'' rule,
-% (which seems to be a reasonable
-% assumption, especially in the context of IoT, where nodes
-% are specialized chips with pre-installed firmware)
-then for any fixed node it is better to stick to a rule
-of the same kind\footnote{We comment more on this at the 
-end of Section~\ref{s_parasite}}.
-This seems to be a reasonable assumption, especially 
-in the context of IoT, where nodes are specialized 
-chips with pre-installed firmware.
-
-% More specifically, 
-In order to issue a transaction, a node
-does the following:
+要發起一個交易，節點需做以下步驟:
 \begin{itemize}
- \item 
- %First, it 
- The node chooses two other transactions to approve
-% (in general, these two transactions may coincide),
-according to an algorithm. In general, these two
-transactions may coincide.
-%\footnote{see Section~\ref{s_parasite}}.
- \item 
- %It 
- The node checks if the two transactions
-are not conflicting, and does not approve
-conflicting transactions.
- \item For
- % the transaction to be valid, 
- a node to issue a valid transaction,
-the node must solve a cryptographic puzzle 
-% (which may be 
-% computationally demanding)
- similar to those in the Bitcoin blockchain.
- This is achieved by finding a nonce such that the hash
- of that nonce concatenated with some data from the 
- approved transaction has a particular form. In the case
- of the Bitcoin protocol, the hash must have at least a 
- predefined number of leading zeros.
-% (e.g., it needs to find a nonce such that the hash of that 
-% nonce together with some data from the approved transactions 
-% has a particular form, for instance, has at
-% least some fixed number of zeros in front).
-% \item comment on computation and propagation times??
-\end{itemize}
-It is important to observe that
-%, in general, 
-the iota network is asynchronous.
-% have an asynchronous network.
-In general,
-% so that 
-nodes do not necessarily see the same set of transactions.
-It should also be noted 
-% also 
-that the tangle may
-contain conflicting transactions.
-The nodes do not have to achieve consensus on 
-which valid\footnote{Transactions that are issued 
-according to the protocol.
-% i.e., 
-% transactions issued according to the protocol
-} transactions
-have the right
-to be in the ledger,
-% (all of them can be there);
-meaning all of them can be in the tangle.
-%but
-However, in the case where there are conflicting transactions,
-%they 
-the nodes need to decide which transactions will become
-orphaned\footnote{Orphaned transactions are not indirectly
-approved by incoming transactions anymore}.
-% (that is, eventually not indirectly approved by incoming 
-% transactions anymore).
-The main rule that the nodes use for deciding 
-between two conflicting transactions 
-is the following: 
-a node runs the tip selection algorithm\footnote{As mentioned above,
-there is a good reason to assume that other nodes would
-follow 
-%(almost) 
-the same algorithm for tip selection.} 
-(cf.\ Section~\ref{s_parasite}) many times,
-and sees which of the two transactions 
-% of the two is 
-is more likely to be indirectly
-approved by the selected tip. For example,
-if
-%, after 100 runs of the tip selection algorithm,
-a transaction was selected 97 times during 100 runs
-of the tip selection algorithm,
-we say that it is confirmed with~$97\%$ confidence.
-% A reasonable rule of thumb for considering a transaction
-% confirmed can be 
-% the following: first wait until
-% the adaptation period is over (see Section~\ref{s_cum_grow};
-% essentially, that means that ``almost'' all newly arriving
-% transactions indirectly approve our transaction), 
+  \item 
+  根據演算法選擇兩筆交易驗證(這兩筆交易可能會一樣)
+  \item 
+  檢查這兩筆交易有無衝突，且有皆沒有驗證到衝突的交易
+  \item
+  要發起一筆合法 (valid) 交易，節點必須解出一道加密的問題，與比特幣相似。
+  需要找出一個 nonce 讓其與其他驗證交易的資料的 hash 值為特定格式，如在比特幣的協定中， hash 值得前面需有指定個數個 0
+\end{itemize} \leavevmode\\
+重要的是， iota 是一個非同步的網路。通常，節點們並不會看到一樣的交易集合。
+值得注意的是 tangle 可能存在衝突的交易。
+節點間並不需要達成共識，因為合法\footnote{依照協定發起的交易}的交易有權繼續留在帳本中，也就是留在 tangle 中; 
+但要是出現衝突的交易，節點便需要決定哪筆交易要被孤立 (orphaned)\footnote{孤立的交易不會再被新進交易間接驗證}，也就是這筆交易不會再被新進的交易間接驗證。
+決定哪筆交易是要被孤立的主要準則如下: 一個節點進行多次的 tip 選擇演算法\footnote{如上所述，
+我們有好的理由可以假設其他節點會遵循一樣的演算法進行 tip 選擇}(cf.\ ~\ref{s_parasite})，接著觀察哪筆交易較可能被選到的 tip 間接驗證。
+舉例來說: 假設跑了 100 次 tip 選擇演算法，有一筆交易被選到 97 次，我們便說它有 ~$97\%$ 的信心被驗證到。 
 
-Let us also comment on the following question (cf.\ \cite{red_balloons}):
-what motivates the nodes to propagate transactions? 
-% In fact, nodes do not 
-% have motivation 
-%% to not 
-%to not propagate in our system. (this is a double negative, makes wording confusing)
-Every node calculates some statistics, one of which is how many new
-transactions are received from a neighbor.
-If one particular node is ``too lazy'', it will be dropped by its neighbors.
-% So
-Therefore, even if a node does not issue transactions, and hence has no direct 
-incentive to share new transactions that approve its own transaction, it still has
-incentive to participate. 
+我們也一併說明接下來的問題 (cf.\ \cite{red_balloons}節): 
+促使節點們產生、傳播 (propagate) 交易的動機是什麼? 
+每個節點會計算一些數據，其中之一是計算會從鄰居接收多少新的交易。
+如果某個特定節點「太懶惰」，便會被它的鄰居捨棄。
+因此，即使節點並沒有發起任何的交易，且沒有分享新的交易來驗證自己交易的動力，但他仍然有動機參與。 
 
-% In the subsequent sections, 
-After introducing some
-notation in Section~\ref{s_weight_algo},
-we discuss algorithms for choosing the two transactions to approve, 
-the rules for measuring the transaction's overall approval
-(Section~\ref{s_cutsets}, especially Section~\ref{s_cum_grow}), 
-and possible
-attack scenarios (Section~\ref{s_attacks}). 
-Also, in the unlikely
-event that the reader is scared by the formulas, they can jump 
-directly to the ``conclusions'' at the end 
-of each section.
+在~\ref{Weights and more}節中簡單介紹一些術語後，我們要討論選擇兩筆交易予以接受納入系統的演算法，
+用於衡量整體交易的驗證演算法（第~\ref{s_cutsets} 節，尤其是~\ref{s_cum_grow} 節），以及可能會受到的攻擊情況（第~\ref{s_attacks} 節）。 
+接著，懼怕數學式的讀者可以直接跳到每一節最後的「結論」。
 
-It should be noted that 
-the idea
-% s about usage 
-of using DAGs in the cryptocurrency 
-%context were 
-space has been around for some time, see~\cite{dag_generalized_blockchain, dagcoin, SZ, LSZ, braids}.
-Specifically,~\cite{SZ} introduces the 
-% so-called 
-GHOST protocol, which proposes a modification 
-of the Bitcoin protocol by making the main ledger a tree 
-instead of a blockchain. 
-It is shown that such a 
-modification 
-% permits to reduce 
-reduces 
-% the 
-confirmation times
-and improves the overall security of the network. 
-In~\cite{LSZ} the authors consider 
-a DAG-based cryptocurrency model. 
-%differently 
-Their model is different than
-our model for the following reasons: the sites of 
-their DAG are blocks instead of individual transactions; 
-the miners in their system compete for transaction fees; 
-and 
-% (not individual transactions)
-% (as in Bitcoin) 
-new tokens may be created by block miners. 
-Also, observe that
-a solution somewhat similar to ours was proposed in~\cite{dagcoin}, although it does not 
-discuss any particular tip approval strategies.
-After the first version of this paper was published,
-several other works 
-% in that direction has 
-that aim to create a DAG-based distributed ledger have appeared,
-e.g.~\cite{SZ_SPECTRE}.
-%which appeared after the first version of this paper
-We 
-% mention 
-also reference another approach~\cite{bitcoinj,lightning} 
-that aims to make Bitcoin
- micropayments possible by establishing peer-to-peer
-payment channels. 
-
-
+此外，應該指出的是，有關有向無環圖在加密貨幣領域中的想法已經有一些時日了，
+比如文獻 ~\cite{dag_generalized_blockchain, dagcoin, SZ, LSZ, braids}。
+尤其需要指出的是，文獻 ~\cite{SZ} 中提出是被稱為 GHOST 的協議，修改了比特幣協議，把主要帳本的結構從區塊鏈改為一棵樹(tree); 
+這樣的作法顯示，可以降低驗證時間並提高整體網路的安全性。
+在文獻~\cite{LSZ} 中，作者們提出了基於 DAG 的加密貨幣模型; 
+有別於我們模型的是，組成 DAG 的是區塊 (block)，而非獨立的交易。
+且礦工會競爭手續費，新的金錢也會被創造。
+再來，文獻~\cite{dagcoin} 中提出了一種類似於我們的解決方案，雖然他並沒有討論任何驗證 tip 的方法。
+在這篇論文發布後，也有其他人也研究以 DAG 為基礎的分散式帳本，如~\cite{SZ_SPECTRE}。
+我們也提及了另一種~\cite{bitcoinj,lightning} 針對基於 P2P 的比特幣小額支付的解決方案。
 
 \section{Weights and more}
 \label{s_weight_algo}
@@ -2266,5 +1982,5 @@ Quantum cryptanalysis of hash and claw-free functions.
 
 
 \end{thebibliography}
-
+\end{CJK}
 \end{document}
