@@ -126,164 +126,63 @@ tangle 不僅成功的讓區塊鏈往前邁進一步，其特性更是符合 M2M
 在這篇論文發布後，也有其他人也研究以 DAG 為基礎的分散式帳本，如~\cite{SZ_SPECTRE}。
 我們也提及了另一種~\cite{bitcoinj,lightning} 針對基於 P2P 的比特幣小額支付的解決方案。
 
-\section{Weights and more}
+\section{權重及相關概念}
 \label{s_weight_algo}
-% Here, we define the (own) 
-In this section we define the weight of a transaction, 
-and related concepts. The weight of a transaction is 
-proportional to the amount of work that the issuing node invested 
-into it. In 
-%practice (meaning ``in current iota's implementation''), 
-the current implementation of iota,
-the weight may only assume values $3^n$, 
-where~$n$ is a positive integer that belongs to 
-some nonempty interval of acceptable values\footnote{This
-interval should also be finite --- see the ``large weight 
-attack'' in Section~\ref{s_attacks}.}.
-In fact,
-% mostly, here for us 
-it is irrelevant to know how the weight
-was obtained in practice. 
-It is only important that every transaction
-has a positive integer, its weight,
-% ($=$ weight) 
-attached to it. 
- In general, the idea is that a transaction with a
- larger weight is more ``important'' than a transaction
- with a smaller weight.
- % the larger the weight is, the 
-% more ``important'' the transaction is for the tangle.
-% Usually it is assumed that,
- To avoid spamming and 
- % different kinds of attacks,
- other attack styles, it is assumed that
- no entity can generate
-% too many 
-an abundance of transactions with ``acceptable'' weights
- in a short period of time.
+本節我們定義一個交易的自身權重及其相關概念。交易的權重與發送這筆交易的節點所投入的工作量成正比；
+在目前 iota 的實作中，權重可以假定為 $3^n$ 的一些數值，其中 $n$ 屬於有限區間內的正整數\footnote{這個區間應為有限的 --- 
+參照第~\ref{s_attacks} 節中的「大權重攻擊」}。
+事實上，這與權重是如何增加的並不相干; 重要的是，每一筆交易都有一個正整數的權重。
+總之，權重愈高該筆交易在 tangle 中也就愈「重要」。
+為了避免各式攻擊，我們假設沒有任何角色 (entity) 可以在短時間內產生大量的「可接受」權重的交易。
+ 
+我們所需要的一個重要概念就是一個交易的\emph{累積權重}：
+它被定義為這個交易的自身權重與其他直接以及間接驗證這個交易的所有交易的自身權重之和。
+累積權重的計算方法如圖~\ref{f_weights} 所示。其中方框代表交易，方框右下角較小的數字表示這個交易的自身權重，
+而字體加粗的數字是這筆交易的累積權重。例如，交易~$F$ 經交易 $A,B,C,E$  直接或者間接被驗證。
+交易~$F$ 的累積權重就是交易 $A,B,C,E$ 的各自自身權重之和，即 $9=3+1+3+1+1$。
 
-One of the notions we need is the \emph{cumulative weight}
-of a transaction:
-it is defined as the own weight of a particular transaction plus
-the sum of own weights of all transactions that directly or indirectly approve
-this transaction.
-The algorithm for cumulative weight calculation is illustrated in 
-Figure~\ref{f_weights}. The boxes represent transactions,
-the small number in the SE corner of each box denotes own weight, and the 
-% (bigger) 
-bold number denotes
-the cumulative weight. For example, transaction~$F$
-is directly or indirectly approved
-% , directly or indirectly, 
-by transactions
-$A,B,C,E$. The cumulative weight of~$F$ is
-$9=3+1+3+1+1$, which is the sum of the own weight of~$F$ and the 
-own weights of $A,B,C,E$.
-
- Let us define ``tips'' as unapproved transactions 
- in the tangle graph.
- In the top 
- %picture
- tangle snapshot of 
-Figure~\ref{f_weights}, the only 
-% unapproved transactions (the ``tips'') 
-tips are~$A$ and~$C$.
-When the new transaction~$X$ 
-% comes 
-arrives and approves~$A$ and~$C$ in the bottom 
-tangle snapshot,~$X$ becomes the only tip.
- The cumulative weight of all other transactions
-increases by~$3$, the own weight of~$X$.
-%(which is the weight of~$X$).
-
+在圖~\ref{f_weights} 中沒有被驗證的交易(即 “tips”)只有交易~$A$ 和交易~$C$。
+若一個新的交易~$X$ 進入系統並且驗證交易~$A$ 和~$C$，那麼交易~$X$ 就是系統中唯一的 tip 了，
+同時系統中其他所有的交易的權重增加 3（即交易~$X$ 的自身權重）。
+為了討論驗證演算法，我們需要引入一些其他的變數。
 
 \begin{figure}
  \centering \includegraphics[width=0.64\textwidth]{weights} 
-\caption{DAG with weight assignments before and after
-a newly issued transaction,~$X$. The boxes represent transactions,
-the small number in the SE corner of each box denotes own weight, and the 
-bold number denotes the cumulative weight.
-%On the weights (re)calculation
-}
+\caption{新發起交易進入系統後的權重改變圖。每個方框代表交易，
+方框右下角較小的數字表示這個交易的自身權重，
+而粗體數字是每筆交易的累積權重。}
 \label{f_weights}
 \end{figure}
 
-% For the discussion of approval algorithms,
-We need 
-%also 
-to introduce two additional variables for the discussion 
-of approval algorithms.
-First, for a transaction site on the tangle, 
-we introduce its
+在討論驗證演算法前，我們須再介紹兩個名詞：
+首先，對於 tangle 中的一筆交易，它的:
 \begin{itemize}
- \item \emph{height}: the length of the longest
-oriented path to the genesis;
- \item \emph{depth}: the length of the longest
-reverse-oriented path to some tip.
+ \item \emph{高度}(height): 定義為自創世交易 (genesis) 至當前這個交易的所有路徑中最長的長度
+ \item \emph{深度}(depth): 定義為自這個交易到某個 tip 的最長路徑；
 \end{itemize}
-For example, 
-% on Figure~\ref{f_reverse_weights}, 
-$G$ has 
-height~$1$ and depth~$4$ 
-in Figure~\ref{f_reverse_weights}
-% (because of the reverse 
-% path $E,C$),
-% depth~$3$ 
-because of the reverse 
- path $F,D,B,A$, 
-while~$D$ has height~$3$ and depth~$2$.
-Also, let us introduce the notion of the \emph{score}.
-By definition, the score of a transaction
- is the sum of own weights of all transactions approved by this 
-transaction plus
- the own weight of the transaction itself.
-% (we need this only for the tips, although this definition
-% makes sense for all transactions). 
-% (again, see 
+
+例如，在圖~\ref{f_reverse_weights} 中，交易 $G$ 的高度為 1，深度為 4 (因為反向路徑 $F,D,B,A$)；
+而交易~$D$ 的高度為~$3$，深度為~$2$。
+接下來，我們引入\emph{積分} (score) 的概念。
+一筆交易的積分定義為它的自身權重與所有它驗證的那些交易的自身權重之和。
+
 \begin{figure}
  \centering \includegraphics[width=0.64\textwidth]{reverse_weights} 
 \caption{
-%On the calculation of scores (circled)
-DAG with own weights assigned to each site, 
-and scores calculated for sites~$A$ and~$C$.}
+每筆交易的自身權重，以及交易~$A$ 和~$C$ 的積分}
 \label{f_reverse_weights}
 \end{figure}
-% On the picture, 
-In Figure~\ref{f_reverse_weights},
-the only 
-tips are~$A$ and~$C$.
-Transaction~$A$ directly or indirectly approves 
-% (directly or indirectly)
-transactions $B,D,F,G$, so the score of~$A$
-is $1+3+1+3+1=9$. Analogously, the score
-of~$C$ is $1+1+1+3+1=7$.
 
-%In fact, 
-In order to understand the arguments presented in this paper,
-one may safely assume that all transactions have an own weight
- equal to~$1$.  
-\emph{From now on, we stick to this assumption}.
-% In particular
-Under this assumption, the cumulative weight of 
-transaction~$X$ becomes
-~$1$ plus the number of transactions that directly or 
-indirectly approve~$X$, and 
-% our transaction directly or indirectly. 
-the score 
-% now is 
-becomes~$1$ plus the number of transactions
-that are directly or indirectly approved by~$X$. 
-% are directly or indirectly approved by our transaction.
+在圖~\ref{f_reverse_weights} 中，僅有的 tips 有交易~$A$ 和~$C$。
+交易~$A$ 直接或者間接地驗證了交易 $B,D,F,G$，因此交易~$A$ 的積分為 $1+3+1+3+1 = 9$。
+同樣地，交易~$C$ 的積分為 $1+1+1+3+1 = 7$。
 
-% Also, let us observe that, among the above metrics, 
-Let us note that, among those defined 
-in this section, the cumulative weight
-is (by far!) the most important metric, although 
-% for us (although 
-height, depth, and score will 
-briefly enter some discussions as well.
+想要了解本論文的證明過程，你可以假設所有交易的權重都為 1。
+因此，\emph{從現在開始，我們會依循這個假設}。
+在這個假設底下，交易~$X$ 的累積權重就是~$1$ 加上所有直接或間接驗證~$X$ 的交易個數，
+而積分則為~$1$ 加上被~$X$ 直接或間接驗證的交易個數。
 
-
+接著注意到，所有代數中最重要的就是累積權重(就目前而言!)，而高度、深度以及分數待會也會列入討論。
 
 
 \section{Stability of the system, and cutsets}
