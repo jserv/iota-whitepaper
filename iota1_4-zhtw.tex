@@ -185,533 +185,122 @@ tangle 不僅成功的讓區塊鏈往前邁進一步，其特性更是符合 M2M
 接著注意到，所有代數中最重要的就是累積權重(就目前而言!)，而高度、深度以及分數待會也會列入討論。
 
 
-\section{Stability of the system, and cutsets}
+\section{系統的穩定性和截斷集合}
 \label{s_cutsets}
 
-Let $L(t)$ be the total number of tips 
-% (i.e., unreferenced transactions)
-in the system at time~$t$. One
-%, of course,
- expects that 
-the stochastic process~$L(t)$ remains \emph{stable}\footnote{Under
-an additional assumption that the process is time-homogeneous.}.
-More precisely, one expects the process to be \emph{positive recurrent}, see Sections~4.4 and~6.5
-of~\cite{Ross_m} for formal definitions. 
-In particular, positive recurrence implies that the limit of 
-$\IP[L(t)=k]$ as $t\to \infty$ should
-exist and be positive for all $k\geq 1$. 
-Intuitively, we expect that $L(t)$ should fluctuate 
-around a constant value, and not escape to infinity.
-% (thus leaving a lot of unapproved transactions behind).
-If $L(t)$ were to escape to infinity, many unapproved transactions
-would be left behind.
+記 $L(t)$ 為 $t$ 時刻系統中 tips 的總數。
+當然，大家預期隨機變數 $L(t)$ 保持\emph{穩定}\footnote{在整個發展過程與時間皆同步的假設下}，
+更精確地來說，我們期望是\emph{正遞迴} (positive recurrent) 的; 
+正式的定義可以參照第~4.4 節以及~\cite{Ross_m} 的~6.5 節處; 
+正遞迴指的是當 $t\to\infty$，$\mathbb{P}\big[L(t)=k\big]$ 的極限應存在且為正值 $\forall k\geq 1$ ）。
+直觀上， $L(t)$ 應當圍繞一個恆定的常數波動，而不是趨於無限大。
+如果 $L(t)$ 趨近於無限大，這樣的話系統中會存在大量未經驗證的交易。
 
-To analyze the stability properties of~$L(t)$, we need 
-to make some 
-assumptions. 
-One 
-% of them
-assumption is that
-transactions are issued by a large number
-of roughly independent entities, so the process of incoming
-transactions can be modeled by a Poisson point process
-(cf.\ e.g.\ Section~5.3 of~\cite{Ross_m}).
-Let~$\lambda$ be the rate of that Poisson process.
- For simplicity, let us assume 
- %for now 
- that 
-this rate remains constant in time. 
-Assume that all devices have approximately 
-the same computing power, and let~$h$ be the average
-time a device needs to perform calculations
-that are required to issue a transaction.
-% in the case where there are~$L$
-% tips and the total number of transactions is~$N$. 
-Then, let us \emph{assume} that all nodes
-behave in the following way:
- to issue a transaction, a node 
- %just
-  chooses
-two tips at random and approves them. 
-It should be observed that, in general, it is \emph{not}
-a good idea for the ``honest nodes'' to adopt
-this strategy because it has a number of practical
-disadvantages. In particular, it does not offer enough
-protection against ``lazy'' or malicious nodes
-%\footnote{We 
-%remind the reader that we do not try to \emph{enforce}
-%any particular tip selection strategy. 
-%An attacker can choose tips in any way they find convenient.} 
-(see Section~\ref{s_parasite} below). On the other hand,
-we still consider this model since it is simple to analyze,
-and 
-% therefore one may get 
-may provide insight into the system's behavior
-for more complicated tip selection strategies.
-% For this simple strategy, one may assume that the Poisson flows
-% of approvals to 
-% %different 
-% each tip are independent, and have
-% rate $2\lambda/L$. This follows from
-% Proposition~5.3 of~\cite{Ross_m}, which says 
-% that if we independently classify each event of a Poisson process
-% according to a list of possible subtypes,
-% then the processes of events of each subtype 
-% are independent Poisson processes.
+為了分析 $L(t)$ 的穩定性，我們需要一些前提假設。
+其中一個就是，當有一個獨立的節點產生了一個大權重的交易，
+因此新進交易的整個過程可以以帕松分佈為模型(cf.\ e.g.\ ~\cite{Ross_m} 的~5.3 節)。
+假設 $\lambda$ 為帕松過程 (Poisson process) 的交易輸入流的速率；為簡單起見，我們假定交易輸入流的速率隨著時間仍保持恆定。
+假設所有的設備都具有相近的計算能力，一台設備要發送一筆交易所需要計算的平均時間為 $h$。
+我們\emph{假定}所有節點都符合以下模式:
+ 
+即在要發送一筆交易的時候，節點從 tips 中隨機選擇兩個並驗證它們。
+須注意到的是，對「誠實的節點」而言，採用此方法並\emph{不是}一個好主意。
+有幾個缺點，它並不能有效的抵制「懶惰的節點」和惡意的節點(參照第~\ref{s_parasite} 節)。
+但我們仍把這個方法納入討論，因為其較容易分析，而且讀者也接著會一窺較複雜的 tip 選擇演算法。
 
-Next, we make a further simplifying assumption that any node,
-at the moment when it issues a transaction, observes not the 
-actual state of the tangle, but the one exactly~$h$ time units
-ago. This means, in particular, that a transaction
-attached to the tangle at time~$t$ only becomes 
-visible to the network at time~$t+h$. We also assume 
-that the number of tips remains roughly stationary
-in time, and is concentrated around a number~$L_0>0$.
-In the following, we will calculate~$L_0$ as
-a function of~$\lambda$ and~$h$. 
+接下來我們做進一步的簡化，當一個節點發起交易時，它並非是 tangle 真正的樣貌，而是~$h$ 個時間單位以前的狀態。
+這代表通常一個交易在時間~$t$ 接上 tangle 後，要到時間~$t+h$ 才會在 tangle 上看見。
+我們也假定 tips 的總數保持在幾乎靜值，數字大概落在 $L_0>0$ 上下，在接下來我們會計算由 $\lambda$ 與 $h$ 推導的 $L_0$ 函數。
 
-Observe that,
-at a given time~$t$ we have roughly $\lambda h$ ``hidden tips'' 
-(which were attached in the time interval $[t-h,t)$ 
- and so are not yet visible to the network);
-also, assume that typically there are~$r$ ``revealed tips'' 
- (which were attached before time $t-h$), 
-so $L_0 = r+ \lambda h$. 
-By stationarity, we may then assume that at time~$t$ there 
-are also around~$\lambda h$ sites that were tips at time~$t-h$, 
- but are not tips anymore. 
-Now, think about a new transaction that comes at this moment;
-then, a transaction it chooses to approve is a tip 
-with probability $r/(r+\lambda h)$ (since there are around~$r$
-tips known to the node that issued the transaction,
-and there are also around~$\lambda h$ transactions which are not 
-tips anymore, although that node thinks they are), 
-so the mean number of chosen tips is $2r/(r+\lambda h)$. 
-The key observation is now that, in the stationary regime,
-this mean number of chosen tips should be equal to~$1$,
-since, in average, a newcoming transaction should not change
-the number of tips.
-Solving the equation $2r/(r+\lambda h)=1$ with respect to~$r$, 
-we obtain $r=\lambda h$, and so 
+我們發現，在一個給定的時間 $t$，我們有約 $\lambda h$ 的「隱藏的 tip」(這些 tips 是在時段 $[t-h,t)$ 接在 tangle 上，
+所以它們尚未能在 tangle 上看到)；接著我們假設有 $r$ 個「顯現的 tips」(在~$t-h$ 之前接上 tangle 的 tips)，
+所以得出 $L_0=r+\lambda h$。由於 tips 的總數是穩定的，我們或許可假設有 $\lambda h$ 個交易在~$t-h$ 的時候為 tips 而在時間 t 時已不是了。
+現在考慮一個全新的交易被引進的情況；則這個交易會驗證到 tips 的機率為 $r/(r+\lambda h)$
+(因為這裡有 r 個 tips，而這裡也有 $\lambda h$ 個不是 tips 但節點誤以為是)，所以選擇到 tips 的期望值是 $2r/(r+\lambda h)$。
+我們可以發現一個重要的現象，在穩定的狀態中，選擇到 tips 的期望值為 $1$，因為就平均而言，一個新進的交易並不會改變 tips 的總數。
+解 $2r/(r+\lambda h)$，可以得到 $r=\lambda h$，以及
+ 
 \begin{equation}
 \label{L0_def} 
 L_0 = 2\lambda h.
 \end{equation}
 
-We also note that,
-if the rule is that a new transaction references~$k$ 
-transactions instead of 2, then a similar calculation gives
+我們在這裡註記，如果今天規則改成一個交易會去驗證~$k$ 個交易，而非兩個，則我們有類似的計算:
 \begin{equation}
 \label{L0k_def} 
  L_0^{(k)} = \frac{k\lambda h}{k-1}.
 \end{equation}
-This is, of course, consistent with the fact that~$L_0^{(k)}$ 
-should tend to $\lambda h$ as $k\to\infty$ (basically, the 
-only tips would be those still unknown to the network).
+理所當然的，$L^{(k)}_0$ 會趨近於 $\lambda h$ 當 $t$ 趨近無限大(基本上，剩下的 tips 會是那些網路上尚未可見到的)
 
+我們回去考慮會有兩個交易會被驗證的情況，一個交易第一次被驗證時間預計約為 $h+L_0/(2\lambda)=2h$。
+因為根據我們的假設，在第一個~$h$ 個單位時間之前，交易是不會被驗證的。
+接下來驗證此交易的帕松過程的速率為 $(2\lambda)/L_0$ (可參考~\cite{Ross_m} 的~5.3，
+說明了當我們以不同類別獨立分類每個帕松過程，那麼各個類別的帕松過程是相互獨立的)。
 
+同時，注意到\footnote{至少在交易節點\emph{試圖}驗證 tips 的情況下} 對任意固定 $t$ 時刻， 
+在某一個階段 $s\in\big[t,t+h(L_0,N)\big]$ 內那些 tips 構成了一個\emph{截斷集合}(cutset)，
+在時間 $t'> t$ 時發起的交易到創世交易的任何路徑都必須通過這個集合。
+很重要的是，在某些情況下這個會截斷集合變得非常小。
+我們也許可以使用這個較小的截斷集合作為檢查點，作為 DAG 可能的剪枝或者其他用途。 
 
-%  Therefore,
-% \begin{equation}
-% \label{prob_appr_tip}
-%  \IP[\text{nobody approves a given tip during time }h(L,N)]
-% = \exp\Big(-\frac{2\lambda h(L,N)}{L}\Big).
-% \end{equation}
-% This means that the expected increment of the total number
-% of tips at the moment when our device issues a
-% transaction is equal to
-% \begin{equation}
-% \label{eq_drift}
-%  1-2\exp\Big(-\frac{2\lambda h(L,N)}{L}\Big).
-% \end{equation}
-% In the above formula, ``$1$'' corresponds to the new tip created
-% by the transaction, and the second term corresponds to the expected
-% number of ``erased'' tips.
-% % Indeed, a
-% According to~\eqref{prob_appr_tip},
-% %(and assuming also that the node always chooses two 
-% %\emph{distinct} tips to approve in the event when there
-% %are at least two available tips)
-%  each tip\footnote{Assuming that the node always chooses two 
-% \emph{distinct} tips to approve if there
-% are at least two tips available.} that is initially
-% chosen for approval will still remain a tip
-%  at the moment when the transaction is issued 
-% with
-% probability~$\exp\big(-\frac{2\lambda h(L,N)}{L}\big)$.
-%  Now, $L(t)$ is in fact a continuous-time
-% random walk on~$\N=\{1,2,3,\ldots\}$, with nearest-neighbor 
-% transitions. 
-% %Indeed, i
-% If the two chosen transactions were already
-% approved, then the process jumps one unit to the right.
-% If both chosen transactions were not previously approved, 
-% then the process jumps one unit to the left.
-%  %and i
-%  In the last possible 
-% case, the process remains still. 
-% 
-% %Now, t
-% To understand the typical behavior of the process,
-% observe that the drift\footnote{The expectation
-% of the increment of the number of tips.} 
-% %(i.e., the expectation
-% %of the increment of the number of tips)
-%  in~\eqref{eq_drift} is positive
-% for small~$L(t)$ and negative for 
-% large~$L$\footnote{This is true for large~$L$
-%  in the case when
-% $h(L,N)=o(L)$ as $L\to\infty$, or just assuming that 
-% the main contribution to the computation or propagation
-% time does not come from handling the tips.}. 
-% In other words, if~$L(t)$ is small, then the drift has a tendency to
-% increase, while if~$L(t)$ is large, the drift has a
-% tendency to decrease.
-% Therefore, the  ``typical'' 
-% value,~$L_0$, of~$L(t)$  
-% %be where
-% occurs when~\eqref{eq_drift} 
-% vanishes so that the number of tips has no 
-% clear tendency to increase or decrease. That is, 
-% \begin{equation}
-% \label{L0_def}
-%  L_0 \approx \frac{2\lambda h(L_0,N)}{\ln 2} 
-% \approx 2.89\cdot\lambda h(L_0,N).
-% \end{equation}
+上述「純隨機」策略實際上並不太好，因為這種策略不會鼓勵節點驗證交易：
+比如「懶惰」的用戶也許總是去驗證較早的幾筆固定交易，因此就沒有貢獻到較新交易的驗證，而這種行為也不會受到懲罰。\footnote{
+提醒讀者，我們並非嘗試 \emph{強迫推行} 任何一種 tips 選擇方式。攻擊者能以任何它覺得便利的方式選擇 tips。)}
+惡意的節點也可以產生大量交易驗證幾組固定交易達到人工製造大量 tips，讓未來的新交易能有極高機率選擇這些 tips，
+而有效的捨棄「誠實」節點的 tips。
+為了避免這個行為，我們得採用另一種方法，讓新進交易偏向選擇「好」的 tips。
+在~\ref{s_parasite} 節有一個此種策略的例子。\footnote{作者認為，以 tangle 為基礎的加密貨幣中最重要的元素是 tip 驗證的方法，
+因為攻擊的途徑就隱含於其中。此外，既然通常不會強制以什麼方法驗證 tip，則必定存在一個讓節點自願依循某個常見方法的理由。
+一個可能的原因是節點知道有相當多的其他節點都遵照同一個 tip 的驗證方法。}
 
-% It is clear that $L_0$, defined above, is the typical size of
-% the tip set. 
-Also (we return to the case of two transactions to approve) 
-the expected time for a transaction to be 
-approved for the first time is approximately $h+L_0/2\lambda=2h$.
-This is because, by our assumption, during the first~$h$
-units of time a transaction cannot be approved, and after
-that the Poisson flow
-of approvals to it has rate approximately $2\lambda/L_0$. 
-(Recall Proposition~5.3 of~\cite{Ross_m}, which says 
-that if we independently classify each event of a Poisson process
-according to a list of possible subtypes,
-then the processes of events of each subtype 
-are independent Poisson processes.)
+在討論交易第一次被驗證所需時間的期望值前，我們分兩個區間進行分析，(圖~\ref{f_regimes})。
 
-Observe that\footnote{At least in the case where the nodes
-\emph{try} to approve tips.} at any fixed time~$t$ the set 
-of transactions that were tips
-at some moment~$s\in[t,t+h(L_0,N)]$ typically
-constitutes a \emph{cutset}. 
-% in the sense that 
-Any path from 
-a transaction issued at time~$t'>t$ to the genesis must pass
-through this set. It is important that the size of 
-a new cutset in the tangle occasionally becomes small. 
-%the cutsets 
-%at least occasionally; 
-One may then 
-use the small cutsets as checkpoints for possible DAG pruning
-and other tasks.
-
-% Now, the above ``purely random'' strategy is not 
-% very good in practice, 
-% because it does not encourage approving tips:
-% a ``lazy'' user could just always approve a fixed couple 
-% of very old transactions 
-% (and therefore not contributing to approval 
-% of more recent transactions)
-% without being punished for such behavior\footnote{we 
-% remind the reader that we do not try to \emph{enforce}
-% any particular tip selection strategy, so an 
-% attacker can choose tips in any way he/she finds convenient}.
-% To discourage the behavior of this sort, one has to adopt a
-% strategy which is biased towards the tips with higher score.
-
-It is important to observe
-%, however,
- that 
-the above ``purely random'' approval 
-strategy is not very good in practice 
-because it does not encourage approving tips.
-A ``lazy'' user could 
-%just
-always approve a fixed 
-%couple 
-pair
-of very old transactions, therefore not contributing to the approval of 
-more recent transactions,
-without being punished for such behavior\footnote{We 
-remind the reader that we do not try to \emph{enforce}
-any particular tip selection strategy. An 
-attacker can choose tips in any way they find convenient.}.
-Also, a malicious entity can artificially inflate the number
-of tips 
-%(e.g., 
-by issuing many transactions that approve
-a fixed pair of transactions. 
-%in order to 
-This would make it possible for future transactions to
-select these tips with very high probability, effectively
- abandoning the tips belonging to ``honest'' nodes.
-To avoid issues of this sort, one has to adopt a
-strategy that is biased towards the ``better'' tips.
-One example of such a strategy is presented in Section~\ref{s_parasite}
-below\footnote{The author's feeling is that the tip approval 
-strategy is \emph{the} most important ingredient for 
-constructing a tangle-based cryptocurrency because 
-%It is there that many
-attack vectors are hiding in this element of the system.
- Also, since there are usually no ways to 
-enforce a particular tip approval strategy, there must be a 
-good reason for nodes to voluntarily choose to follow a common 
-strategy. A possible reason is knowing that a good portion of other 
-nodes are following the same tip approval strategy. 
-%that strategy must 
-%be such that the nodes would voluntarily choose to follow it
-%knowing that at least a good proportion of other nodes does so.
-}.
-
-
-% An example of such a strategy can be the following. 
-% Fix a parameter $\alpha\in(0,1)$; 
-% then, choose the two transactions to approve between
-% the top~$\alpha L$ (with respect to their score).
-% The same considerations as above imply that the typical 
-% size of the set of tips will be 
-% \begin{equation}
-% \label{L0alpha_def}
-%  L_0^{(\alpha)} \approx \frac{2\lambda h(L_0,N)}{\alpha \ln 2}
-%  \approx 2.89\cdot \alpha^{-1}\lambda h(L_0,N).
-% \end{equation}
-% As for the expected time for a transaction to be 
-% approved for the first time, the situation a bit more
-% complicated.
-Before starting the discussion about 
-the expected time for a transaction to 
-%be approved for the first time
-receive its first approval, 
-%observe 
-note that
-we can distinguish 
-%essentially 
-two regimes 
-(Figure~\ref{f_regimes}).
 \begin{itemize}
- \item Low load: the typical number of
-tips is small, and frequently becomes~$1$.
-This may happen when the flow of transactions is so small
-% enough, so
- that it is not probable that several different transactions
-approve the same tip. Also, if the network latency is very
-low and devices compute fast, it is unlikely
-that many tips would appear. This even holds true in the case when the flow
-of transactions is reasonably large. Moreover, 
-we have to assume that there are no attackers 
-that try to artificially inflate the number of tips.
- \item High load: the typical number of tips is large.
-This may happen when
-the flow of transactions is 
-%big enough, 
-large, and computational delays together with network
-latency make it likely that several different transactions
-approve the same tip.
+ \item 低負載區: tips 的數量很少，常常只有 1 個。
+ 當交易流足夠慢時會發生，不太可能發生不同的交易驗證同一個 tip 的情況。
+ 而且若網路延遲很短且設備運算的速度很快，也不大可能會有大量 tips 出現的情況。
+ 即使是在交易流的很快的情況下也是如此。此外，我們也應假設不會有攻擊者產生大量的交易以膨脹 tips 數量。
+ \item 高負載區: tips 的數量很多。當交易流很大且計算力與網路的延遲很長時便可能會讓多筆不同交易驗證到同一個 tip。
 \end{itemize}
 \begin{figure}
  \centering \includegraphics[width=0.64\textwidth]{regimes} 
-\caption{Low load (top) and high load (bottom) regimes of 
-incoming transaction flow. White squares represent verified 
-sites, while gray squares represent tips.
-%The tangle and its typical tip sets (shaded) 
-%in low load and high load
-%regimes. Observe that in the latter case some transactions
-%may have to wait a lot until approved for the first time.
-}
+\caption{新進交易的低負載 (上方) 與高負載 (下方)。白框代表合法的交易，灰框則表示 tips。}
 \label{f_regimes}
 \end{figure}
-%Of course, t
-This division is rather informal, and there is no
-clear borderline between the the two regimes. Nevertheless,
-we find that it may be instructive to consider these
-two 
-%essentially 
-different 
-%situations. 
-extremes.
 
-%In the low load regime, the situation is relatively simple:
-The situation in the low load regime is relatively simple. The first approval
- happens on an average timescale of order $\lambda^{-1}$
-since 
-% already the first (or one of the first)
-one of the first few 
-incoming transactions will approve 
-% our transaction.
-a given tip.
+這樣的分法是比較不正式，且在這兩個區間中並沒有明顯的分界線。然而，我們認為討論這兩種極端是有啟發的。
 
-Let us now consider the high load regime, 
-% that is, 
-the 
-%situation
-case where~$L_0$ is large.
-As mentioned above, one may assume that
-the Poisson flows of approvals to different tips are independent
-and have an approximate rate of~$2\lambda/L_0$. Therefore,
- the expected time for a transaction to 
- % be 
-% approved for the first time 
-receive its first approval is around $L_0/(2\lambda)\approx 1.45 h$
-% (recall
-~\eqref{L0_def}.
-% ).
+在低負載區域，這種情況就相對簡單：在 $\lambda^{-1}$ 的時間尺度上會有第一次驗證， 
+因為第一批中的一個新進交易將會驗證我們的這些 tips。
 
-% First, if the transaction did not make it into
-% the top~$\alpha L$, then this waiting time can be quite large,
-% of order $\exp(cL_0^{(\alpha)})$ (since there is a drift
-% towards $L_0^{(\alpha)}$ for smaller values of~$L$ and the size of the 
-% tip set needs to become much smaller than $L_0^{(\alpha)}$ for 
-% that transaction to be considered for approval). 
-% Therefore, a good strategy
-% for the owner of such a transaction would be to issue an additional
-% empty transaction referencing the first one, and hope that this
-% new transaction enters into the top~$\alpha L$. 
-% Also, similarly to the above, if the transaction is one
-% of the top~$\alpha L$, then with constant probability
-% it will have to wait around $L_0/\lambda$ time units to be
-% approved for the first time 
-% (observe that $\alpha L_0^{(\alpha)}=L_0$).
-% It is worth noting, 
-However, 
-it is worth noting that for more elaborate
-approval strategies\footnote{That favor 
-%the tips of the 
-``better'' quality tips in future implementations of iota.}, it may not be a good
-idea to passively wait a long time until a transaction
-is approved by the others. 
-%whatever that may mean)
-This is 
-%because 
-due to the fact that ``better'' tips will
-keep appearing and will be preferred for approval.
-Rather, in the case when a transaction is waiting 
-for approval over 
-% too long time (i.e., 
-a time interval much larger than $L_0/2\lambda$,
-a good strategy 
-%will
-would be 
-to promote this latent transaction with an additional empty 
-transaction\footnote{An empty transaction is a transaction
-that does not involve any token transfer, but still has to
-approve two other transactions. It should be noted that 
-generating an 
-empty transaction contributes 
-to the network's security.}. 
-% that is, 
-In other words, a node can issue an empty transaction that 
-approves its previous transaction together with one of the ``better'' tips to 
-increase the probability that the empty transaction receives approval.
-%so that this empty transaction has a high probability of 
-%being approved. 
-%good chance to be
-%further approved.
+現在我們來考慮高負載區域的情況，當 $L_0$ 很大的時候。
+如上面所提到的，我們可以假設驗證其他 tips 的帕松事件是相互獨立且其機率近似 $2\lambda/L_0$。
+因此，我們預期一筆交易被第一次驗證的時間約為 $L_0/(2\lambda)\approx1.45h$~\eqref{L0_def}。
 
-% Let us now consider the high load regime.
-%  First, if the transaction did not make it into
-% the top~$\alpha L$, then this waiting time can be quite large,
-% of order $\exp(cL_0^{(\alpha)})$ (since there is a drift
-% towards $L_0^{(\alpha)}$ for smaller values of~$L$ and the size of the 
-% tip set needs to become much smaller than $L_0^{(\alpha)}$ for 
-% that transaction to be considered for approval). 
-% Therefore, a good strategy
-% for the owner of such a transaction would be to issue an additional
-% empty transaction referencing the first one, and hope that this
-% new transaction enters into the top~$\alpha L$. 
-% Also, similarly to the above, if the transaction is one
-% of the top~$\alpha L$, then with constant probability
-% it will have to wait around $L_0/\lambda$ time units to be
-% approved for the first time 
-% (observe that $\alpha L_0^{(\alpha)}=L_0$).
-% However, if that did not happen, then the transaction may fall
-% below the top~$\alpha L$, and then a good strategy will be 
-% to promote it with an additional empty transaction.
-% 
-% Another easy strategy would be to pick, say,
-% five random tips (among all of them), 
-% and approve the top two between these five. Again, 
-% if your transaction was not approved during time 
-% $\Theta(L_0/\lambda)=\Theta(h(L_0,N))$,
-% it is a good idea to promote it with an additional empty transaction.
-% 
-% We also notice that the approval strategy may be further
-% modified, for example, to prevent spamming. For example,
-%  the nodes might prefer
-% tips with bigger own weight, making it more difficult
-% for the spammer to have his transactions approved. 
+值得一提的是，更好的驗證策略\footnote{在未來 iota 的實做中，會偏袒「好」的 tips}，花費大量時間等待交易被驗證並不是個好主意，
+這是因為「好」的 tips 會不斷的出現且也常被選擇驗證。
+甚至當交易在等待被驗證的時間大於 $L_0/(2\lambda)$ 時，一個好的辦法就是另外發起一個空交易\footnote{空交易就是筆沒有 token 的轉帳，
+但仍須驗證兩筆其他交易。注意到，產生空交易還是會貢獻整個網路的安全性。}。換言之，
+節點能發起一個新的空白交易選擇其他「好」的 tips 和它之前的交易驗證，這便會讓這個空白交易會有很大的機會被驗證。
 
-%Now, i
-It turns out that the approval strategies based
-on heights and scores may be vulnerable to a specific
-type of attacks, see Section~\ref{s_parasite}. We will
-discuss more elaborate strategies\footnote{In fact, 
-the author's feeling is that the tip approval 
-strategy is \emph{the} most important ingredient for 
-constructing a tangle-based cryptocurrency. It is there that many
-attack vectors are hiding. Also, since there is usually no way to 
-\emph{enforce} a particular tip approval strategy, it must 
-be such that the nodes would voluntarily choose to follow it
-knowing that at least a good proportion of other nodes does so.} 
-to defend against such attacks
-in that section. 
-%Nevertheless, 
-In the meantime, it is still worth considering
-the simple tip selection strategy where an incoming 
-transaction approves two random tips. 
-%(``approve two random tips''),
-This strategy 
-%since it 
-is the easiest to analyze, and therefore may 
-%give 
-provide some 
-insight into the qualitative and quantitative behavior of the 
-%system
-tangle.
+原本基於高度 (heights) 和積分 (scores) 的驗證策略可能會受到特定類型的攻擊，見~\ref{s_parasite} 節分析。
+我們將在那一節中討論更加詳細的策略\footnote{事實上，作者認為，以 tangle 為基礎的加密貨幣中最重要的元素是 tip 驗證的方法，
+因為很多的攻擊途徑就隱含於其中。此外，既然通常不會\emph{強制}以什麼方法驗證 tip，則必定存在一個讓節點自願依循某個常見方法的理由。
+一個可能的原因是節點知道有相當多的其他節點都遵照同一個 tip 的驗證方法。}來防止這樣的攻擊。
+同時，這種隨機驗證兩筆交易的 tip 選擇策略最簡單，但仍然是值得考慮的。這個策略的分析最簡單，
+從而可能會給出 tangle 行為方面的一些定性和定量方面的理解。
 
-\paragraph{Conclusions:}
+\paragraph{結論:}
 \begin{enumerate}
- \item We distinguish between two regimes, low load and high
-load (Figure~\ref{f_regimes}).
- \item There are only a few tips in the low load regime.
- % , usually there are not many tips (say, one or two), and a 
- A
- tip gets approved for the first
-time in $\Theta(\lambda^{-1})$ time units, where~$\lambda$ is the rate of the 
-incoming flow of transactions.
- \item In the high load regime the typical number 
-of tips depends on the tip approval strategy employed by the new 
-transaction. 
-%(i.e., how the new 
-%transaction chooses the other two transactions for approval).
- \item If a transaction uses the strategy of approving two 
- random tips, the typical number of tips is given by~\eqref{L0_def}. 
- % For the ``approve two random tips'' strategy, the 
-%typical number of tips is given by
- It can be shown 
-that this strategy is optimal with respect to the typical
-number of tips. However, it is not practical to adopt this strategy
-because it does not encourage approving tips.
-%  \item For the strategy ``approve two random tips among top
-% $\alpha L(t)$'' (which does not have the above disadvantage), the 
-% typical number of tips is given by~\eqref{L0alpha_def}.
- \item More elaborate strategies are needed to handle attacks 
- and other network issues. A family 
- %However, more elaborated strategies are needed; a family
-of such strategies 
-%will be described 
-is discussed in Section~\ref{s_parasite}.
- \item The typical time for a 
- %In the high load regime, the typical time until a
-tip to be approved is $\Theta(h)$ in the high load regime, where~$h$ 
-is the average computation/propagation time for a node. However, 
-if the first approval does not occur in the above time interval,
-it is a good idea for the issuer and/or receiver
-to promote that transaction with an additional empty transaction.
+ \item 我們區分了兩個區間，低負載和高負載區間，如圖~\ref{f_regimes} 所示。
+ \item 在低負載區，tips 不多，一個 tip 在 $\Theta(\lambda^{-1})$ 時間尺度內得到第一次驗證，
+ 其中 $\lambda$ 是進入系統內的交易流速度。
+ \item 在高負載區，tips 的典型數量取決於新進交易使用的驗證策略
+ \item 若一筆交易採用「隨機驗證兩個 tips」策略，tips 的典型數量由公式~\eqref{L0_def} 決定。
+ 可以看到這種策略在 tips 的典型數量上是理想的，但是在實際中不會選用這種策略，因為此策略不會鼓勵新的交易去驗證 tips。
+ \item 我們需要更多精巧的方法以抵擋攻擊與整體網路的問題，這類方法將在~\ref{s_parasite} 節中進行討論。
+ \item 在高負載區，一個 tip 獲得驗證所需要的時間尺度為 $\Theta(h)$，其中 $h$ 是一個節點的平均計算/廣播時間。
+ 但是，如果在上述時間間隔內沒有獲得第一個驗證，那麼額外發送一筆空白交易提高驗證速度，對於交易產生者或接收者便是一個好方法。
 \end{enumerate}
 
 
