@@ -306,221 +306,93 @@ L_0 = 2\lambda h.
 
 
 
-\subsection{How fast does the cumulative weight typically grow?}
+\subsection{累積權重的增長有多快？}
 \label{s_cum_grow}
 
-Assume that the network is in the low load regime. 
-% Clearly, in the low load regime,
-After a transaction gets approved several times, 
-its cumulative weight will grow 
-with speed~$\lambda$ 
-%since essentially
-because all new transactions
-will indirectly reference this 
-transaction\footnote{Recall that we assumed that
-the own weights of all transactions are equal to~$1$,
-so the cumulative weight is just the number of transactions
-that directly or indirectly reference a transaction
-plus~$1$.}.
+假設網路是在低負載區，在交易被驗證幾次後，它的累積權重將以 $\lambda$ 的速度增加，因為所有新的交易都將間接指向這筆交易\footnote{
+回顧之前我們假設所有交易的自身權重皆為~$1$，因此其累積權重就會是直接或間接指向這此交易的交易數目加~$1$。}。
 
-In the case where the network is in the high load regime, an 
-old transaction with a large cumulative weight will experience 
-weight growth 
-%As for the high load regime,
-% if a transaction is old enough
-%and with big cumulative weight, then the cumulative weight grows
-with speed~$\lambda$ 
-because essentially 
-all new transactions will indirectly reference it.
-%for the same reasons.
-Moreover, when the transaction is first added to the tangle it may have 
-to wait for some time to be approved. In this time interval, the 
-transaction's cumulative weight behaves in a random fashion.
-% Also, we know
-%that in the beginning the transaction may have to wait 
-%for some time
-%to be approved, and it is clear that its cumulative weight
-%behaves in a random fashion at that time.  
-% However, observe that during
-% a time interval of length~$h(L_0,N)$, in average, a tip 
-% will receive $\lambda h(L_0,N)/L_0 \approx \ln 2$ ???
-To characterize the speed with which the cumulative weight 
-grows after the 
-%see how fast the cumulative weight grows after the 
-transaction receives several approvals, let us define~$H(t)$
-%denote (for simplicity, we start counting time 
-%at the moment when our transaction has been created) by
- as the expected cumulative weight at time~$t$ 
-(for simplicity, 
-we start counting time at the moment when
- our transaction was revealed to the network, i.e.,
-$h$ time units after it was created)
- and~$K(t)$ as the expected number of
- tips that approve the transaction at time~$t$.
-%(or simply ``our tips'')
-Let us also abbreviate $h:=h(L_0,N)$. 
-We make a simplifying
-assumption that the number of tips remains roughly
-constant at a value of~$L_0$ over time. 
-%(equal to~$L_0$) in time. 
-We work with the ``approve two random tips'' strategy in this section. 
-It is expected that the qualitative behavior will be roughly the same for 
-other reasonable strategies. 
+而若在高負載區，具有較大的累積權重的舊交易，其累積權重同樣會以 $\lambda$ 的速度增加，因為基本上新進的交易都會間接的指向它。
+此外，當交易剛進入 tangle 時需要等待一定的時間被驗證，而在這段時間內，其累積權重會以較為無規的形式增長。
+為了弄明白一個交易在得到幾個驗證之後其累積權重的變化行為，
+我們記 $H(t)$ 為 $t$ 時刻該交易的累積權重期望值，(為簡單起見，我們自發起交易開始計時，也就是在發起交易的 $h$ 時間單位後)
+並用 $K(t)$ 表示在 $t$ 時刻驗證我們的這筆交易的 tips 數量的期望值。在此，我們簡記為 $h:=h(L_0,N)$。
+同時，我們做一個簡化假設，認為 tips 的總數大體保持恒定不變，其值約為 $L_0$。本節我們採用「隨機驗證兩個 tips」的策略；
+可預期其結果大致上與其他合理的策略的結果相同。
 
-Recall that a transaction 
-%coming to the system 
-entering the network at time~$t$ typically 
-chooses two 
-%transactions 
-tips to approve based on the state
-of the system at time~$t-h$ because the node must do
-some calculations and verifications before actually issuing the 
-transaction. 
-% Let us make a further simplifying
-% assumption that~$h(L_0,N)$ is much less than~$L_0$; essentially
-It is not difficult to see that
-(assuming, though, that $K(\cdot)$ is the \emph{actual}
-number of tips, not just expected number)
-%obtain that 
-the probability of the transaction approving at least one of ``our'' tips
- in the tangle is
-%that it approves at least one``our'' tip is 
-$1-\big(1-\frac{K(t-h)}{L_0}\big)^2
-=\frac{K(t-h)}{L_0}\big(2-\frac{K(t-h)}{L_0}\big)$\footnote{The expression on the left-hand
- side is~$1$ minus the probability that the two approved tips are not ours.}.
-% (indeed, the two approved tips are ours with probability
-% $\big(\frac{K(t-h)}{L_0}\big)^2$, ). 
-Analogous to Example~6.4 of~\cite{Ross_m},
-we can write for small $\delta>0$
+在 $t$ 時刻進入網路中的一筆交易通常是基於 $t-h$ 時刻時網路的狀態，來選擇兩筆交易進行驗證，因為節點在真正發起交易前必須進行一些運算和驗證。
+不難得到(假設，$K(\cdot)$ 是 \emph{真實的} tips 個數, 而非期望值)一筆交易至少驗證一個「我們的」 tip 的機率是 
+$1-\big(1-\dfrac{K(t-h)}{L_0}\big)^2=\dfrac{K(t-h)}{L_0}\big(2-\dfrac{K(t-h)}{L_0}\big)$\footnote{
+等號左手邊的 1 減掉 2 個不是我們的 tips 被驗證的機率}。
+因此我們可以寫下如下的微分方程 (類似於文獻~\cite{Ross_m}中的例子 6.4):
+
+我們可以得知 $\delta>0$
 \[
  H(t+\delta) = H(t) 
 + \lambda \delta\frac{K(t-h)}{L_0}\Big(2-\frac{K(t-h)}{L_0}\Big)
  + o(\delta),
 \]
-and thus deduce the following differential equation
+我們可以化簡式子為︰
 \begin{equation}
 \label{diff_H}
  \frac{d H(t)}{dt} = \lambda \frac{K(t-h)}{L_0}\Big(2-\frac{K(t-h)}{L_0}\Big).
 \end{equation}
-In order to be able to use~\eqref{diff_H}, we need to first 
-calculate~$K(t)$.
-This is not a trivial task since a tip at time~$t-h$ 
-may not be a tip at time~$t$, 
-and the overall number of tips approving the original transaction 
-increases by 1 in the case where an incoming transaction 
-approves such a tip.
-%It is not immediately clear how to do this, since a tip 
-%at time~$t-h$ may not be a tip at time~$t$, and, 
-%in the case when the newly coming transaction approves
-%such a tip, the overall number of tips approving the original
-%transaction increases by~$1$. 
-The crucial observation
-is that the probability that a tip at time~$t-h$ remains a tip
-at time~$t$ is approximately~$1/2$. 
-(To verify this, recall the discussion from 
-Section~\ref{s_cutsets}: the typical number of tips
-is $2\lambda h$, and during the interval of length~$h$
-new~$\lambda h$ tips will substitute a half of old ones.)
-% plug the expression
-%  in~\eqref{L0_def} into~\eqref{prob_appr_tip}.
- Therefore, at time~$t$ approximately one half~$K(t-h)$ 
-%``previous'' our 
-tips remain in the unconfirmed tip state, while the other half
-will have received at least one approval. 
-%be already approved at least once. 
-Let~$A$ denote
-%by~$A$ 
-the set of  
-%(approximately) 
-$K(t-h)/2$ tips at time~$t-h$
-that are still tips at time~$t$, and let~$B$ denote the remaining 
-set of $K(t-h)/2$ tips that were already approved by time~$t$.
-% will be denoted by~$B$. 
-Let~$p_1$ be the probability that a new transaction
-%the newly arrived transaction 
-approves at least~$1$ transaction from~$B$
-and does not approve any transactions from~$A$. Furthermore,
-let~$p_2$ be the probability that both approved transactions
-belong to~$A$. In other words, $p_1$ and~$p_2$ are
-the probabilities that the current number of ``our'' tips
-increases or decreases by~$1$ upon arrival of the new transaction. 
-We have
+為了能夠使用方程式~\eqref{diff_H}，我們首先需要計算 $K(t)$。計算 $K(t)$ 是很困難的，
+因為在 $t-h$ 時刻的一個 tip 也許在 $t$ 時刻已經不是一個 tip。並且，在新進入的交易驗證了這樣一個 tip 的情況下，
+那麼驗證原來交易的 tips 總量就會增加 1 個。現在，
+可以觀察到一個關鍵是在 $t-h$ 時刻的一個 tip 在 $t$ 時刻仍然保持為 tip 的機率為 $1/2$。
+(欲驗證此，回顧在第~\ref{s_cutsets} 節的討論: 典型的 tip 數目為 $2\lambda h$，而在~$h$ 時間後，$\lambda h$ 個新的 tips 會替換舊的一半。)
+因此，在 $t$ 時刻，有 $K(t-h)$ 的一半的「以前」的 tips 仍然保持為 tips，而另一半已經至少被一筆交易所驗證。
+
+讓我們用~$A$ 表示 $K(t-h)/2$ 個在 $t-h$ 到 $t$ 時刻仍然保持為 tips 的這些交易的集合，
+而用~$B$ 表示另外 $K(t-h)/2$ 個在 $t$ 時刻已經被驗證過的 tips 的集合。
+假定新進入的交易至少驗證了集合~$B$ 中一筆交易而沒有驗證集合~$A$ 中任何交易的機率為 $p_1$；
+接著假設同時驗證了兩筆集合~$A$ 中的交易的機率為 $p_2$ 。換言之， $p_1$ 和 $p_2$ 分別對應於在新交易到達時，
+目前「我們」的 tips 增加或者減少 1 的機率。因此，得到一些基本關係式：
+
 \begin{align*}
  p_1 &= \Big(\frac{K(t-h)}{2 L_0}\Big)^2 + 2\times
 \frac{K(t-h)}{2 L_0}\Big(1-\frac{K(t-h)}{L_0}\Big),  \\
  p_2 &= \Big(\frac{K(t-h)}{2 L_0}\Big)^2.
 \end{align*}
-To obtain the first expression, observe that~$p_1$
-equals the probability that both approved tips 
-belong to~$B$ plus twice the probability that the first
-tip belongs to~$B$ and the second tip does not 
-belong to $A\cup B$.
-Analogous to~\eqref{diff_H},
-the differential equation for $K(t)$ is:
+為了得到第一個敘述，觀察到 $p_1$ 等於都驗證~$B$ 集合的機率與第一個驗證~$B$ 集合且第二個不是 $A\cup B$ 集合的機率之和，類似方程式~\eqref{diff_H}，
+$K(t)$ 的微分方程：
 \begin{equation}
 \label{diff_K}
  \frac{d K(t)}{dt} = (p_1-p_2)\lambda = \lambda
  \frac{K(t-h)}{ L_0}\Big(1-\frac{K(t-h)}{L_0}\Big).
 \end{equation}
-It is difficult to solve~\eqref{diff_K} exactly,
-so we make further simplifying assumptions.
-First of all, we observe that after the time when~$K(t)$
-reaches level~$\eps L_0$ for a fixed~$\eps>0$, it will grow 
-very quickly to~$(1-\eps)L_0$. 
-%(indeed, the right-hand side of~\eqref{diff_K} will be bounded away from~$0$).
-Now, when~$K(t)$ is small with respect to~$L_0$, 
-we can drop the last factor in the right-hand side of~\eqref{diff_K}\footnote{It 
-would be a constant close to~$1$, so the 
-right-hand side would be equivalent to 
-$\lambda\frac{K(t-h)}{ L_0}$.}.
-% Also, substituting~$K(t-h)$ by $K(t)-h\frac{d K(t)}{dt}$,
-% we obtain a simplified version of~\eqref{diff_K}
-We obtain a simplified version of~\eqref{diff_K}
-by recalling that $\frac{\lambda h}{L_0}=\frac{1}{2}$:
+很難準確地求解方程~\eqref{diff_K}，因此我們進一步簡化假設。首先，我們可以看到，對於任意固定 $\epsilon >0$ ,
+在當 $K(t)$ 達到 $\epsilon L_0$ 水準之後，它將會迅速增長到 $(1-\epsilon)L_0$ 。
+現在，當 $K(t)$ 相對於 $L_0$ 非常小的時候，我們可以捨棄掉方程~\eqref{diff_K}\footnote{得到一個接近~$1$ 的常數，因此等號右邊會等於
+$\lambda\frac{K(t-h)}{ L_0}$。} 右邊最後一項。
+藉由 $\dfrac{\lambda h}{L_0}=\dfrac{1}{2}$ ，我們可以得到方程~\eqref{diff_K} 的簡化版:
 \begin{equation}
 \label{diff_K_simpl}
  \frac{d K(t)}{dt} \approx \frac{1}{2h}K(t-h),
-%\approx 0.74\cdot \frac{\lambda K(t)}{ L_0},
 \end{equation}
-with boundary condition $K(0)=1$. 
-We look for a solution of the form $K(t)=\exp(c\frac{t}{h})$;
-after substituting this into~\eqref{diff_K_simpl},
-we obtain
+其中邊界條件為 $K(0)=1$。我們打算尋找 $K(t)=\exp(c\dfrac{t}{h})$ 形式的解；帶入~\eqref{diff_K_simpl} 之後，我們得到:
 \[
  \frac{c}{h}\exp\Big(c\frac{t}{h}\Big) 
    \approx \frac{1}{2h}\exp\Big(c\frac{t}{h}-c\Big),
 \]
-therefore 
+因此 
 \begin{equation}
 \label{eq_K_simpl}
 K(t)=\exp\Big(W\big({\textstyle\frac{1}{2}}\big)\frac{t}{h}\Big)
     \approx \exp\Big(0.352\frac{t}{h}\Big)
 \end{equation}
-is an approximate solution, where~$W(\cdot)$ is the so-called
-Lambert $W$-function.\footnote{Also known as
- the omega function or product logarithm; for~$x\in [0,+\infty)$
-it is characterized by the relation $x=W(x)\exp(W(x))$.}
-% The 
-% (approximate) solution of this differential
-% equation is
-% \begin{equation}
-% \label{eq_K_simpl}
-%  K(t) \approx \exp\Big(\frac{t\ln 2}{(2+\ln 2)h}\Big)
-% \approx \exp\Big(0.26\frac{t}{h}\Big).
-% \end{equation}
-Taking the logarithm of both sides in~\eqref{eq_K_simpl}, we find that
-the time when~$K(t)$ reaches $\eps L_0$ is roughly
+這是一個近似解，這裡的~$W(\cdot)$ 是所謂的 Lambert $W$-function。\footnote{也稱為 omega function 或 product logarithm; 
+在~$x\in [0,+\infty)$，由 $x=W(x)\exp(W(x))$ 這個關係式的特性。}
+同時對式~\eqref{eq_K_simpl} 左右兩邊取對數，我們可以得到~$K(t)$ 達到 $\epsilon L_0$ 所需要的時間大約為:
 \begin{equation}
  \label{eq_t0}
  t_0 \approx \frac{h}{W\big({\textstyle\frac{1}{2}}\big)} 
 \times \big(\ln L_0 - \ln \eps^{-1}\big)
 \lesssim 2.84 \cdot h  \ln L_0.
 \end{equation}
-%Turning back
-Returning to~\eqref{diff_H} and 
-dropping the last term on the right-hand side, we
-obtain that during the ``adaptation period'' (i.e., $t\leq t_0$
-with~$t_0$ as in~\eqref{eq_t0}), it holds that
+再回到方程~\eqref{diff_H}，並且如前面一樣捨棄掉右邊最後一項），我們可以得到在 「調整階段」
+(例如，在 $t\leq t_0$ 的時候， $t_0$ 為~\eqref{eq_t0} 式的結果) 具有如下方程：
 \begin{align*}
  \frac{d H(t)}{dt} &\approx \frac{2\lambda}
 {L_0}K(t-h)
@@ -531,7 +403,7 @@ with~$t_0$ as in~\eqref{eq_t0}), it holds that
 &= \frac{2W\big({\textstyle\frac{1}{2}}\big)}{h}
 \exp\Big(W\big({\textstyle\frac{1}{2}}\big)\frac{t}{h}\Big)
 \end{align*}
-and therefore
+因此，
 \begin{equation}
 \label{eq_H}
  H(t)\approx 
@@ -539,61 +411,24 @@ and therefore
 \approx 2\exp\Big(0.352\frac{t}{h}\Big).
 \end{equation}
 
-Let us also remind the reader that
-% , as discussed above,
- after the adaptation period,
-the cumulative weight~$H(t)$ grows linearly
-with speed~$\lambda $. We stress that the ``exponential
-growth'' in~\eqref{eq_H} does not mean that 
-the cumulative weight grows ``very quickly'' 
-during the adaptation period. Rather, the behavior
-is as depicted in Figure~\ref{f_adapt_period}.
+在此提醒讀者，在調整階段之後，累積權重 $H(t)$ 會隨著速度 $\lambda$ 線性增長。
+我們需要強調的是在~\eqref{eq_H} 式中的「指數增長」並不意味著在調整階段累積權重增長「十分的迅速」，圖~\ref{f_adapt_period} 中描述了其行為。
 \begin{figure}
  \centering \includegraphics[width=0.64\textwidth]{adapt_period_1} 
-\caption{Plot of cumulative weight vs. time for the high load regime.
-%On the cumulative weight growth
-}
+\caption{累積權重 v.s. 高負載區的時間}
 \label{f_adapt_period}
 \end{figure}
 
-% Also, we comment that the calculations in this section 
-% can be easily adapted to the situation when a node
-% references~$s>1$ transactions \emph{in average}. 
-% For this, one just need to replace~$2$ by~$s$ in~\eqref{eq_drift}
-% (but not in~\eqref{diff_H}!), and $2$ by~$s$ as well as 
-% $\ln 2$ by~$\ln s$ in~\eqref{L0_def}
-% % --\eqref{L0alpha_def}
-% and in \eqref{diff_K_simpl}--\eqref{eq_H}.
-
 \goodbreak
 
-\paragraph{Conclusions:}
+\paragraph{結論}
 \begin{enumerate}
- \item After a transaction gets approved multiple times 
- in the low load regime, 
-its cumulative weight will grow 
-with speed~$\lambda w$, where~$w$ is the mean weight
-of a generic transaction.
- \item In the high load regime, there are two distinct growth 
- phases. First, a transaction's 
-% again,after our transaction gets approved several of times,
-%first its 
-cumulative weight~$H(t)$ grows with increasing
-speed during the \emph{adaptation period}
-according to~\eqref{eq_H}. After
-the adaptation period is over, the cumulative weight grows 
-with speed~$\lambda w$ (Figure~\ref{f_adapt_period}).
-In fact, for \emph{any} reasonable strategy the cumulative
-weight will grow with this speed after the end
-of the adaptation period because 
-%essentially all newly 
-all incoming transactions will indirectly approve  
-%our transaction.
-the transaction of interest.
- \item One can think of the adaptation period of a 
- transaction as the time until most of the current tips indirectly
-approve that transaction. The typical length of the 
-adaptation period is given by~\eqref{eq_t0}.
+ \item 在低負載區中，一筆交易被驗證過多次以後，其累積權重會以~$\lambda w$ 的速度增加，其中~$w$ 是一般交易的平均數。
+ \item 在高負載區中，會有兩種不同的狀態。其一，根據方程~\eqref{eq_H}，一個交易在\emph{調整階段} 的累積權重~$H(t)$ 會以飛快的速度增加。
+ 在調整階段結束後，累積權重的增長速度為~$\lambda w$ (圖~\ref{f_adapt_period})。事實上，對於\emph{任何}合理的策略，
+ 累積權重都會以這個速度增加。因為所有新進的交易都會間接的驗證此交易。
+ \item 您可以視一個交易被現在的 tips 間接驗證的這段時間為適應階段。
+而其標準的適應階段長度由~\eqref{eq_t0} 得出.
 \end{enumerate}
 
 
