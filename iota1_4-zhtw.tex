@@ -432,236 +432,102 @@ K(t)=\exp\Big(W\big({\textstyle\frac{1}{2}}\big)\frac{t}{h}\Big)
 \end{enumerate}
 
 
-\section{Possible attack scenarios}
+\section{可能的攻擊情況}
 \label{s_attacks}
-We start by discussing an 
-%obvious 
-attack scenario where the attacker tries to ``outpace'' the network alone:
-% Let us describe an attack scenario:
+讓我們在討論一個攻擊方案，當攻擊者試圖「趕上」整個網路：
 \begin{enumerate}
- \item An attacker sends a payment to a merchant and receives 
- the goods after the merchant decides the transaction has a sufficiently large
-  cumulative weight.
-% the attacker pays to the merchant, and receives the 
-%goods after the merchant considers that the transaction got already 
-%a sufficiently large cumulative weight;
-\item The attacker issues a double-spending transaction.
-\item \label{x_strategy} The attacker uses their computing
- power to issue many small transactions that approve the
-  double-spending transaction, but do not approve the 
-  original transaction that they sent to the merchant either 
-  directly or indirectly.
-%the attacker issues a lot of small transactions
-%(very aggressively, with all his computing power)
-%that ​do​ ​not​ approve the original 
-%one directly or indirectly, but approve the double-spending transaction;
-\item It is possible for the attacker to have a plethora of Sybil
- identities which are not required to approve tips.
-%observe that the attacker may have a lot of Sybil identities,
-%and also is not required to necessarily approve tips;
-\item An alternative method to item~\ref{x_strategy}
- would be for the attacker
- to issue a big double-spending transaction using all of their
-  computing power. This transaction would have a very large
-   own weight\footnote{Here we assume that the own weight 
-   of a transaction may vary. It will become clear in the discussion
-    below why it is a good idea to let the own weight vary.}, 
-    and would approve transactions prior to the 
-   legitimate transaction used to pay the merchant.
-%alternatively to item~\ref{x_strategy}, the attacker may use
-%all his computing power to issue a ``big'' double-spending transaction 
-%(i.e., with a very large own weight\footnote{here we assume again that
-%the own weight of a transaction may vary; in fact, from the
-% discussion below it will become clear why it is not a good idea
-%to let it vary (at least to let it vary too much)})
-% that approves a couple
-%of transactions prior to the legitimate one (the one used to pay to 
-%the merchant);
-\item The attacker hopes that their dishonest subtangle outpaces 
-the honest subtangle. If this happens, the main tangle continues 
-growing from the double-spending transaction, and the legitimate 
-branch with the original payment to the merchant is orphaned (Figure~\ref{f_bigPoW}).
-%he hopes that his ``sub-DAG'' outpaces the main one,
-%so that the DAG continues growing from the double-spending
-%transaction, and the legitimate branch is discarded
-%(see Figure~\ref{f_bigPoW}).
+ \item 攻擊者付款給商家，在商家認為交易已經獲得了足夠大的累積權重之後，攻擊者拿到了商品
+\item 接下來攻擊者發佈了一筆雙重支付的交易
+\item \label{x_strategy} 攻擊者同時發送大量較小的交易，
+這些交易不直接或者間接驗證原始的付款交易，而是去驗證那筆雙重支付的交易
+\item 可以看到攻擊者也許就擁有大量的女巫攻擊身份，並且不對 tips 進行驗證
+\item 在第~\ref{x_strategy} 步中，也可以採用另外的一種方案，
+攻擊者使用所有它的計算能力去發送一筆大的雙重支付交易，這筆交易具有非常大的自身權重，
+\footnote{這裡我們假設自身權重可以很多樣。下面的討論會更清楚的解釋為什麼要讓自身權重值很多樣。}，
+並驗證在原始付款交易之前的交易
+\item 攻擊者期望他的 sub-DAG 超越主體 DAG，從而使得 DAG 持續從攻擊者的雙重支付交易進行增長，
+以便使得之前合法的支付交易被拋棄掉(如圖~\ref{f_bigPoW} 所示)。
 \end{enumerate}
-In fact, it can be shown that the strategy of one large double-spending 
-transaction increases the attacker's chances of being successful. 
-%we will see below that that the strategy of one big 
-%double-spending transaction increases the attacker chances. Even more,
-In the ``ideal'' situation of this mathematical model, this attack
-\emph{always} succeeds. 
+事實上，接下來我們可以看到這種大權重的雙重支付交易策略可以增加攻擊者成功的機率。
+而且，在這種數學模型的「理想」情況下，這種攻擊\emph{總是}可以成功的。
 
-Let~$W^{(n)}$ be the time needed to obtain a nonce that 
-gives the double-spending transaction a weight of at
- least~$3^n$.
- % to the double-spending transaction.
-One may assume that~$W^{(n)}$ is an exponentially distributed
-random variable with parameter\footnote{With 
-expectation $\mu^{-1}3^n$.} $\mu 3^{-n}$, where~$\mu$ represents the computing 
-power of the attacker. 
+假設 $W^{(n)}$ 為獲得權重至少為 $3^n$ 的雙重支付交易的 nonce 的時間。
+我們可以假設 $W^{(n)}$ 是一個以 $\mu3^{-n}$ 為參數\footnote{比如，期望值為 $\mu^{-1}3^{-n}$ }的指數分佈的隨機變數，
+其中 $\mu$ 表示攻擊者的計算能力。
 
-Assume that the merchant 
-accepts the legitimate transaction when its cumulative 
-weight becomes at least~$w_0$, which happens~$t_0$
-time units after the original transaction. It is reasonable
-to expect that the cumulative weight grows with linear
-speed~$\lambda w$, where~$\lambda$ is the overall arrival rate
-of transactions issued on the network by honest nodes,
-% to the system (issued by honest users)
- and~$w$ is the mean weight
-of a generic transaction. The typical total weight of the legitimate 
-branch at that time is $w_1=\lambda w t_0$.
-% the typical total weight of the legitimate branch at that time.
+假設商家在一筆合法交易的累積權重達到至少 $w_0$ 才接受，須經過 $t_0$ 個時間單位。
+因此可以認為其累積權重將以線性速度 $\lambda w$ 增長，
+其中 $\lambda$ 是系統中由誠實使用者發送的交易的總體到達速率，而 $w$ 是一般交易的平均權重。
+記 $w_1=\lambda wt_0$ 為在商家接受交易時合法分支的總權重。
 
-Let $\lceil x\rceil$ be the smallest integer greater than
-or equal to~$x$,
-define $n_0=\big\lceil \frac{\ln w_1}{\ln 3}\big\rceil$, 
-so that $3^{n_0}\geq w_1$\footnote{In fact, $3^{n_0}\approx w_1$
-if~$w_1$ is large.}. If the attacker managed to obtain a nonce
-that gives the double-spending transaction a weight of at least~$3^{n_0}$ during the time interval
-of length~$t_0$,
- then the attack 
-succeeds. 
+假設 $\lceil x\rceil$ 是大於或等於 $x$ 的最小整數，定義 $n_0=\lceil\dfrac{\ln{w_1}}{\ln3}\rceil$ ，
+那麼 $3^{n_0}\geq w_1$ \footnote{事實上，如果 $w_1$ 較大，則 $3^{n_0}\approx w_1$ }。
+如果在 $t_0$  時間間隔內，攻擊者設法獲得了一個 nonce 以使得雙重支付交易的權重至少為 $3^{n_0}$，那麼攻擊就成功了。
 \begin{figure}
- \centering \includegraphics[width=\textwidth]{bigPoW} 
-\caption{The ``large weight'' attack}
-\label{f_bigPoW}
-\end{figure}
-The probability of this event is
+  \centering \includegraphics[width=\textwidth]{bigPoW} 
+ \caption{「大權重」攻擊}
+ \label{f_bigPoW}
+ \end{figure}
+這種成功攻擊的概率是
 \[
  \IP[W^{(n_0)}<t_0]=1-\exp(-t_0\mu 3^{-n_0})
   \approx 1-\exp(-t_0\mu w_1^{-1})
   \approx \frac{t_0\mu}{w_1}.
 \]
-This approximation is true in the case where 
-$\frac{t_0\mu}{w_1}$ is small, which is 
-a reasonable assumption. If this ``immediate'' attack
-does not succeed, the attacker may continue to look for the nonce
-that gives weight~$3^n$ for $n>n_0$, and hope that at the moment
-they find it, the total weight of the legitimate branch is smaller
-than~$3^n$. The probability of this event occurring is
+在 $\dfrac{t_0\mu}{w_1}$ 很小的情況下，這個近似是合理的假設。
+然而，如果這種「即刻」攻擊沒有成功的話，攻擊者可以繼續尋找 nonce 以使得權重為 $3^n$ ，
+其中 $n>n_0$，並希望在找到 nonce 的時候，合法交易分支的總權重要小於 $3^n$。這種情況的機率是
 \[
  \IP[\lambda w W^{(n)}<3^n]
 =1-\exp\big(-\mu 3^{-n_0}\times (3^{n_0}/\lambda w)\big)
   = 1-\exp(- \mu/\lambda w)
   \approx \frac{\mu}{\lambda w}.
 \]
-That is, although $\frac{\mu}{\lambda w}$ should typically
-be a small number, at each ``level'' $n$ the attack succeeds with a constant
-probability. Therefore, it will a.s. succeed. 
-%In fact,
-The typical time until it succeeds 
-is roughly $3^\frac{\lambda w}{\mu}$. Although this quantity
-may be very large, the probability that the 
-``first''\footnote{During the time~$t_0$.} attack succeeds 
-is not negligible. 
-%We thus arrive to the following conclusion:
-Therefore, we need countermeasures. One such countermeasure 
-would be limiting the own weight from above, or even setting 
-it to a constant value. As mentioned in Section~\ref{s_cutsets}, the 
-latter may not be the best solution because it does not offer 
-enough protection from spam.
-%For example,
-%limit the own weight from above, or even set it to constant
-%(as mentioned in Section~\ref{s_cutsets}, the latter
-%may be not the best solution, since it does not 
-%offer enough protection from spam).
+
+也就是說，儘管 $\dfrac{\mu}{\lambda w}$ 一般情況下應該是很小，在每一個 $n$ 值水準下，攻擊成功具有恒定的機率。
+因此，最終總是可以攻擊成功。通常攻擊成功的須費時約 $3^{\lambda w/\mu}$ 。儘管這個數量可能非常大，
+但是「第一次」\footnote{在時間 $t_0$ 內}成功攻擊的機率仍不容忽視。因此我們需要對策：
+其一便是限制最大權重的值，甚至是設為固定常數值。如前面第~\ref{s_cutsets} 節所提到的，
+後面的那種策略也許不是最好的方案，因為那樣不能為大量垃圾交易攻擊提供足夠的保護。
+
 
 \medskip
 
-Now, let us discuss the situation
-where the maximum own weight is capped at a value of~$1$,
- and estimate the probability that the attack succeeds.
- %(the general case can be treated in the same
-%way, simply by rescaling)
+那麼現在我們來討論當最大權重具有上限，且上限為 $1$ 時，估算攻擊成功的概率。 
 
-Assume that a given transaction gained
- cumulative weight~$w_0$ in~$t_0$ time units after the moment
-when it was issued, and
-%Assume also 
-that the adaptation period for 
-that transaction is over. In this situation, the transaction's
- cumulative weight
-increases linearly with speed~$\lambda $. Now, 
-imagine that the attacker wants to double-spend on this transaction.
-To do so, the attacker secretly prepares the double-spending transaction,
- and starts generating \emph{nonsense} transactions 
-that approve the double-spending transaction at the 
-time\footnote{Or even before; we discuss this case later.}
- when the \emph{original} transaction was issued to the merchant.
-%he/she secretly prepares the double-spending transaction, 
-%and starts generating other transactions
-%that approve the double-spending one. 
-If 
-%at some moment
-%(after the merchant decides to accept the legitimate
-%transaction) 
-the attacker's subtangle outpaces the legitimate
-subtangle at some moment after the merchant decides to accept 
-the legitimate transaction, then the double-spending attack would be successful.
-If that does not happen, then
-the double-spending transaction 
-would not be approved by others 
-because the legitimate transaction would acquire more cumulative 
-weight and essentially all new tips would indirectly 
-approve it. The double-spending transaction would be orphaned in 
-this scenario.
-% and so it will be orphaned.
+假設給定的一筆交易在發送後經過 $t_0$ 個時間單位後，獲得累積權重為 $w_0$ ，
+並假設這筆交易的調整階段已經結束，因此其累積權重以 $\lambda$ 的速度線性增長。
+現在，想像攻擊者試圖對這筆交易進行雙重支付攻擊；為此，
+他隱密的準備了雙重支付交易，並在商家決定接受第一筆合法的\emph{原始}交易之後開始生成\emph{其他的}交易來驗證這筆雙重支付交易
+\footnote{或是在更早的時候; 稍後討論這個情況}。
 
-As before, let~$\mu$ stand for the computing power of the attacker.
-%(i.e., the speed of transactions' generation). 
-We also make a simplifying assumption that the 
-transactions propagate instantly.
-Let $G_1,G_2, G_3,\ldots$ denote i.i.d.\ exponential 
-random variables with parameter~$\mu$\footnote{With expected
- value~$1/\mu$.}, and define
-$V_k=\mu G_k$, $k\geq 1$. It follows that
-$V_1,V_2, V_3,\ldots$ are i.i.d.\ exponential 
-random variables with parameter~$1$. 
+若攻擊者的 subtangle 的權重要大於合法交易 subtangle 的權重的話，雙重支付攻擊就會成功。
+如果在商家決定接受這筆合法交易後，攻擊者的 subtangle 在某個時刻超越了合法的 subtangle，則雙重支付的攻擊便會成功。
+如果上述情況不出現的話，那麼雙重支付就不會被其他交易驗證，因為合法的交易獲得更多的累積權重並且最終所有新的 tips 都會間接驗證這筆交易，
+因此雙重支付也就成為了孤立交易了。
 
-Suppose that at time~$t_0$ the merchant decides to accept
-the transaction with cumulative weight~$w_0$.
-%(recall that it has cumulative weight~$w_0$
-%at that time).
-Let us estimate the probability that the attacker
-successfully double-spends. Let $M(\theta)=(1-\theta)^{-1}$
-be the moment generating function of the exponential
-distribution with parameter~$1$ (Section~7.7
-of~\cite{Ross}). 
-It is known\footnote{This is a consequence of the so-called
-Large Deviation Principle.
-See the general book~\cite{DZ}, and
- Proposition~5.2 in Section~8.5 of~\cite{Ross}
-for a simple and instructive derivation of the 
-upper bound, and Section~1.9 of~\cite{Dur} for the 
-(not so simple) derivation of the lower bound.} that for~$\alpha\in (0,1)$ it holds that
+如前所述，假定 $\mu$ 為攻擊者的計算能力，我們也假設交易是立即被傳播出去的。
+假定 $G_1,G_2, G_3,\ldots$ 是以 $\mu$ 為參數\footnote{期望值為 $1/\mu$}的獨立同分佈的指數分佈變數，
+並定義 $V_k=\mu G_k$，$k\geq1$。接著，$V_1, V_2,V_3...$ 是以 $1$ 為參數的獨立同分佈的指數分佈的變數。
+
+假設在 $t_0$ 時刻商家決定接受交易其累積權重為 $w_0$ 。
+讓我們來估算一下攻擊者成功完成雙重支付攻擊的機率。
+記 $M(\theta)=(1-\theta)^{-1}$ 記作指數分佈參數為 $1$ 的動差生成母函數，
+(參考文獻~\cite{Ross} 中~7.7 節)。對於 $\alpha\in(0,1)$\footnote{這是所謂的大偏差定理 (Large Deviation Principle) 的影響
+參照書籍~\cite{DZ}, 以及~\cite{Ross} 第~8.5 節的定理~5.2 中簡單且有建設性的導出上限值。
+還有~\cite{Dur} 第~1.9 對下限值的推導(較困難)。}，
+於是有如下公式成立:
 \begin{equation}
 \label{Chernoff}
  \IP\Big[\sum_{k=1}^n V_k \leq \alpha n\Big] \approx
    \exp\big(-n\phi(\alpha)\big), 
 \end{equation}
-where $\phi(\alpha)=-\ln \alpha + \alpha -1$ is the Legendre
-transform of $\ln M(-\theta)$. 
-%Observe that, 
-As a general fact,
-it holds that $\phi(\alpha)>0$ for~$\alpha\in (0,1)$. Recall
-that the expectation of an exponential random variable 
-with parameter~$1$ also equals~$1$.
+其中 $\phi(\alpha)=-\ln \alpha + \alpha -1$ 是對 $\ln M(-\theta)$ 的拉格朗日轉換。
+一般而言，當 $\alpha\in(0,1)$，$\varphi(\alpha)>0$ 是成立的。回顧指數隨機變數 Exp(1) 的期望值等於~$1$）。
 
-Assume that $\frac{\mu t_0}{w_0}<1$, otherwise the probability
-that the attacker's subtangle
-eventually outpaces the legitimate subtangle would be close to~$1$.
-Now, to outweigh~$w_0$ at time~$t_0$, the attacker needs
-to be able to issue at least $w_0$ 
-%(for simplicity, we drop the integer parts) 
-transactions with maximum own weight~$m$
-during time~$t_0$. 
-Therefore, using~\eqref{Chernoff}, we find
- the probability that the double-spending transaction
-has more cumulative weight at time~$t_0$
-is roughly
+假設 $\frac{\mu t_0}{w_0}<1$，否則，攻擊者的 Subtangle 最終超過合法的機率就接近於~$1$。
+現在，為了在 $t_0$  時刻超過 $w_0$ ，攻擊者需要在 $t_0$ 時間單位內至少發送 $w_0$ 筆最大權重為 $m$ 的交易。
+因此，通過公式~\eqref{Chernoff}，我們可以得到雙重支付交易在 $t_0$ 時刻有更大累積權重的機率大概是
 \begin{align}
  \IP\Big[\sum_{k=1}^{w_0/m} G_k  < t_0\Big]
  & = \IP\Big[\sum_{k=1}^{w_0} V_k  < \mu t_0\Big]
@@ -673,83 +539,44 @@ is roughly
 \phi\big(\textstyle\frac{\mu t_0}{w_0}\big)\big).
 \label{double_t0}
 \end{align}
-For the above probability to be small,
-$\frac{w_0}{m}$ needs to be large 
-and~$\phi\big(\textstyle\frac{\mu t_0}{w_0}\big)$
-cannot be very small. 
+也就是說，為了讓上面的機率非常小，我們需要 $\frac{w_0}{m}$ 很大，且 $\phi\big(\textstyle\frac{\mu t_0}{w_0}\big)$ 不能非常小。
 
-Note that, at time~$t\geq t_0$, the cumulative weight
-of the legitimate transaction is roughly~$w_0+\lambda (t-t_0)$
-because we assumed that the adaptation period is over,
-so the cumulative weight grows with speed~$\lambda$.
-Analogous to~\eqref{double_t0}, 
-one finds the probability that the double-spending transaction
-has more cumulative weight at time~$t\geq t_0$ is roughly
+注意到，在~$t\geq t_0$ 時刻時，合法交易的累積權重約為~$w_0+\lambda (t-t_0)$，因為我們假設適應階段已經結束了，
+因此累積權重是以~$\lambda$ 的速度增加。
+類似於~\eqref{double_t0}，可以得到在~$t\geq t_0$ 時，雙重支付交易會有較大權重的機率約為：
 \begin{equation}
 \label{double_t}
  \exp\big(-(w_0+\lambda (t-t_0))
 \phi\big(\textstyle\frac{\mu t}{w_0+\lambda (t-t_0)}\big)\big).
 \end{equation}
-Then, it must be true that we have $\frac{\mu t_0}{w_0}\geq 
-\frac{\mu}{\lambda}$ since the cumulative weight grows with 
-speed less than~$\lambda $ during the adaptation period. 
-It can be shown that the probability 
-of achieving a successful double spend is of order
+接著，必須確保 $\frac{\mu t_0}{w_0}\geq 
+\frac{\mu}{\lambda}$ ， 因為在適應期間累積權重是以低於~$\lambda $ 的速度增加。
+可以得到成功進行雙重支付的機率大概為：
 \begin{equation}
 \label{double_ever}
  \exp\big(-w_0\phi\big(\max(\textstyle\frac{\mu t_0}{w_0},
 \frac{\mu}{\lambda})\big)\big).
 \end{equation}
-For example, let $\mu=2$, $\lambda=3$
-so that the attacker's power is only a bit less than
-that of the rest of the network. Assume that the 
-transaction has a cumulative weight of~$32$ by time~$12$.
-Then, $\max(\frac{\mu t_0}{w_0},\frac{\mu}{\lambda}) = \frac{3}{4}$,
-$\phi\big(\frac{3}{4}\big)\approx 0.03768$,
-and~\eqref{double_ever} then gives the upper bound 
-approximately $0.29$. If one assumes that
-$\mu=1$ and keeps all other parameters intact, then
-$\max(\frac{\mu t_0}{w_0},\frac{\mu}{\lambda}) = \frac{3}{8}$,
-$\phi\big(\frac{3}{8}\big)\approx 0.3558$,
-and~\eqref{double_ever} gives approximately $0.00001135$,
-quite a drastic change.
+比如，假設 $\mu=2$, $\lambda=3$，因此攻擊者的計算能力只是比網路中其他所有的計算力稍微小一點點。
+假設在時間~$12$ 的時候，交易的累積權重為~$32$。那麼，
+$\max(\frac{\mu t_0}{w_0},\frac{\mu}{\lambda}) = \frac{3}{4}$,
+$\phi\big(\frac{3}{4}\big)\approx 0.03768$，
+且公式~\eqref{double_ever} 給出的上限大概是$0.29$。然而，若我們假設 $\mu=1$，並保持其他參數不變， 
+那麼 $\max(\frac{\mu t_0}{w_0},\frac{\mu}{\lambda}) = \frac{3}{8}$,
+$\phi\big(\frac{3}{8}\big)\approx 0.3558$，
+而公式~\eqref{double_ever} 得到大約是 $0.00001135$，確實有很大的變化。
 
+通過上述討論，我們觀察到很重要的一點就是，為了系統的安全，
+必須確保 $\lambda > \mu$。也就是說，「誠實」節點的交易流量應該比攻擊者的計算能力大。
+否則，公式~\eqref{double_ever} 的估算就沒有什麼用。
+這也意味著需要額外的安全措施，例如在 tangle 基礎的系統發展的早期，設立檢查點。
 
- From the above discussion it is important to recognize that 
- the inequality $\lambda > \mu$ should be true for the 
- system to be secure. 
-% for the system to be secure, it should be true that 
-% $\lambda > \mu$ 
-% (otherwise, the estimate~\eqref{double_ever} would be useless); i.e.,
-In other words, the input flow of ``honest''
-transactions should be large compared to the 
-attacker's computational power. Otherwise, 
-the estimate~\eqref{double_ever} would be useless. 
-This indicates the need
-for additional security measures, such as checkpoints,
-during the early days of a tangle-based system.
-
-
-%Also, as for the strategies for deciding which 
-%one of two conflicting transactions is valid,
-% one has to be careful when relying only on the cumulative 
-When choosing a strategy for deciding which one of 
-two conflicting transactions is valid, one has to be careful 
-when using cumulative weight as a decision metric. 
-This is due to the fact that cumulative weight can be subject
- to an attack similar
-to the one described
-in Section~\ref{s_parasite}, namely the attacker may prepare 
-a double-spending transaction well in advance, build a 
-secret subtangle referencing it, and then broadcast 
-that subtangle after the merchant accepts the legitimate 
-transaction.  
-% Rather
-A better method for deciding 
-between two conflicting transactions might be the one
-described in the next section: run the tip selection algorithm
-and see which of the two transactions is indirectly
-approved by the selected tip.
+對於如何決定兩個相互衝突的交易中哪一筆是合理的交易的策略來說， 
+僅依靠累積權重判斷的我們必須十分小心謹慎。
+這是因為可能是攻擊的目標，如同在~\ref{s_parasite} 節中所描述的攻擊。
+攻擊者也許會事先准備好雙重支付交易，構建一個 subtangle 來指向驗證這筆雙重支付交易，
+然後在商家接受合法交易之後將這個 subtangle 廣播出去。在下一節中我們將提出一個更好的方法來處理兩筆相互衝突的交易：
+運行 tip 選擇演算法，然後看這兩筆交易中哪一筆交易被選取的 tip 所間接驗證。
 
 \subsection{A parasite chain attack and a new tip 
 selection algorithm}
