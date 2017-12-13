@@ -578,290 +578,108 @@ $\phi\big(\frac{3}{8}\big)\approx 0.3558$，
 然後在商家接受合法交易之後將這個 subtangle 廣播出去。在下一節中我們將提出一個更好的方法來處理兩筆相互衝突的交易：
 運行 tip 選擇演算法，然後看這兩筆交易中哪一筆交易被選取的 tip 所間接驗證。
 
-\subsection{A parasite chain attack and a new tip 
-selection algorithm}
+\subsection{寄生鏈攻擊與 tip 選擇演算法}
 \label{s_parasite}
-Consider the following attack (Figure~\ref{f_tip_Markov}):
-an attacker secretly builds a subtangle that occasionally 
-references the main tangle to gain a higher score. 
-Note that the score of honest tips is roughly the sum 
-of all own weights in the main tangle, while the score
-of the attacker's tips also contains the sum of all own weights in the
-parasite chain.
-Since network latency is not an issue for an attacker
- who builds a subtangle 
-alone\footnote{This is due to the fact that an attacker can always
-approve their own transactions without relying on any
-information from the rest of the network.},
-they might be able to give more height
-to the parasite tips if they use a computer 
-that is sufficiently strong. Moreover, the attacker can artificially 
-increase their tip count at the moment of the attack by 
-broadcasting many new transactions that approve 
-transactions that they issued earlier on the parasite chain
-%Finally, the number of attacker's tips 
-%can be artificially increased at the moment of the attack
-%(by issuing a lot of transactions that all approve
-%\emph{the same} attacker's transactions,
-%see 
-(Figure~\ref{f_tip_Markov}).
-This will give the attacker an advantage in the case where 
-the honest nodes use some selection strategy 
-that involves a simple choice between available tips.
-
-To defend against this attack style,
-we are going to use the fact that the main tangle is supposed
-to have more active hashing power than the attacker. Therefore, the 
-main tangle is able to produce larger increases in cumulative weight 
-for more transactions than the attacker.  
-%manages to give more cumulative weight to more transactions than the attacker.
-The idea is to use a MCMC algorithm
-to select the two tips to reference. 
-
-Let $\HH_x$ be the current cumulative weight of a site.
- %(i.e., a transaction represented on the tangle graph). 
- Recall that we assumed all 
-own weights are equal to~$1$. Therefore, the cumulative weight of a tip
-is always~$1$, and the cumulative weight of other sites is at least~$2$.
-
-The idea is to place some particles, a.k.a.\ random walkers,
-on sites of the tangle and let them walk towards the tips
-in a random\footnote{There is not a ``canonical'' source of randomness.
-The nodes just use their own (pseudo)random number generators
-to simulate the random walks.} way. The tips ``chosen'' by the walks
-are then the candidates for approval.
-The algorithm is described in the following way:
-\begin{enumerate}
- \item Consider all sites on the interval $[W,2W]$, where 
- $W$ is reasonably large\footnote{The idea is to place the particle ``deep'' into
-the tangle so that it will not arrive at a tip straight away. However, the 
-particle should not be placed ``too deep'' because it needs to find a tip
- in a reasonable time. Also, the interval $[W,2W]$ is arbitrary. 
-One could chose $[W,5W]$, etc.
-There are also other ways to select the walkers' starting points.
- For example, a node can simply
-take a random transaction received between $t_0$ and
-$2t_0$ time units in the past, where~$t_0$ is some fixed time point.}.
-% transactions with cumulative weight
-% between $W$ and (say) $2W$ (where~$W$ 
-%is reasonably large, to be chosen
-
- \item Independently place $N$ particles on sites in that
-  interval\footnote{This choice
-is largely arbitrary. We use several particles instead of just two
-for additional security. The idea is that if a particle
-were to accidentally jump to the attacker's chain, which is supposed
-to be long, then it would spend a lot of time there 
-and other tips will be chosen first.}.
-  % there ($N$ is not so big, say, $10$ or so
+考慮如下攻擊(圖~\ref{f_tip_Markov})：攻擊者秘密的打造一個 subtangle，
+並偶爾指向驗證主網路以獲得更多的積分。注意，誠實的 tips 的積分大概是主網路中所有交易的自身權重之和，
+而攻擊者的 tips 還包含寄生鏈中所有交易的自身權重。而對於打造這個 subtangle 的攻擊者來說，
+網路延遲不是問題\footnote{這是因為攻擊者可以驗證他自己的交易而不仰賴網路中其他節點所提供的資訊}。
+如果他使用十分強大的電腦，攻擊者便能夠讓寄生 tips 具有更高的高度。
+此外，攻擊者可以在攻擊時任意增加 tip 數量，並廣播許多新交易驗證寄生鏈上較早的交易。
  
- \item Let these particles perform independent
- discrete-time random
- walks ``towards the tips'', meaning that a transition
-  from~$x$ to~$y$
-is possible if and only if~$y$ approves~$x$
- \item The two random walkers that reach the tip set first will
-sit on the two tips that will be approved.
-However, it may be wise to modify this rule in the 
-following way: first discard those random walkers that 
-reached the tips \emph{too fast} because they may have ended on one
-of the ``lazy tips''.
- \item The transition probabilities
- of the walkers are defined in the following
- way: if~$y$ approves~$x$ ($y\rightsquigarrow x$), 
-then the transition probability~$P_{xy}$
- is proportional to $\exp\big(-\alpha(\HH_x-\HH_y)\big)$,
-that is
+(圖~\ref{f_tip_Markov})
+當誠實節點使用某些只從有效的 tips 中簡單的選擇要驗證的 tip 的 tip 選擇演算法，這會給攻擊者優勢。
+
+為防禦這種攻擊，我們基於主 tangle 中應具有比攻擊者更多活躍的雜湊算力的事實，因此，
+主 tangle 比攻擊者能讓更多的交易獲得更大的累積權重。核心思想是使用 MCMC 演算法來選擇要指向的兩個 tips。
+
+假設某一筆交易目前的累積權重為 $\HH_x$，再次提醒，
+我們假設所以交易的自身權重等於~$1$。因此 tip 的累積權重一直都會是~$1$，而其他交易的累積權重至少是~$2$。
+
+這樣做是為了在 tangle 的節點上佈下一些點，慣用代稱為隨機漫步者 (random walker)，讓他們朝著 tips 隨機\footnote{
+沒有特定的起源，節點們僅使用自己的 (虛擬)亂數產生器模擬隨機漫步}行走。
+而被隨機漫步者挑中的 tips 就是待被驗證的候選交易。
+演算法描述如下：
+\begin{enumerate}
+ \item 考慮累積權重在 $[W,2W]$ 之間的所有交易，其中 $W$ 是很大\footnote{
+ 這個想法是把點放在很「深」的 tangle 中，所以不會直接走到 tip。然而，這個點不應該被放到太深的地方，
+ 因為它需要在合理的時間範圍內走到 tip。再者，$[W,2W]$ 這個區間是任意選定的，也可以將區間設置為 $[W,5W]$ 等。
+也有其他方法可以選擇隨機漫步的起始點，例如：某節點可以在過去的 $t_0$ 到 $2t_0$ 時間區間內接受到的交易中選擇，
+而 $t_0$ 是特定的時間點。}的一個數。
+ \item 獨立選擇在這個區間\footnote{
+   這個選擇是任意的。我們使用多個隨機漫步者，而非兩個是為了增加安全性。如果隨機漫步者意外的落在攻擊者的鏈上時，
+   此鏈應該很長，而導致花費太多時間走到 tip，而其他 tips 則會被優先選取。}中放置 $N$ 個隨機漫步者
+ \item 
+ 那些隨機漫步者將獨立的進行離散時間隨機行走到 tips，這代表著當 $y$ 驗證 $x$，就可以從 $x$ 轉到 $y$。
+ \item 最先抵達 tips 的前兩個隨機漫步者，這就意味著這是我們要進行驗證的兩個tips。然而，
+ 更好的做法是依照著個原則修改規定: 捨棄那些「太快」走到 tips 的隨機漫步者: 
+ 他們可能走到「懶惰的 tips」。
+ \item 隨機行走轉移機率按如下方式進行定義：如果 $y$ 驗證 $x$ ($y\rightsquigarrow x$)，
+  那麼轉移率 $P_{xy}$ 是正比於 $\exp\big(-\alpha(H_x-H_y)\big)$，也就是
  \begin{equation}
   \label{trans_probs}
    P_{xy} = \exp\big(-\alpha(\HH_x-\HH_y)\big)
 \Big(\sum_{z: z \rightsquigarrow x}
  \exp\big(-\alpha(\HH_x-\HH_z)\big)\Big)^{-1},
  \end{equation}
-where $\alpha>0$ is a parameter to be chosen\footnote{One can start 
-with $\alpha=1$.}.
+ 其中 $\alpha>0$ 是一個待選取的參數\footnote{可以從 $\alpha=1$ 開始}。
 \end{enumerate}
-Note that this algorithm is ``local'', meaning one does not need
- to traverse the tangle back to the genesis to perform relevant calculations.
-In particular, 
-observe that one does not need to calculate the cumulative
-weights for the whole tangle. At most one needs to calculate the 
-cumulative weights 
-for the sites that indirectly approve the starting point
-of the walker.
-
+需要注意的是這個演算法是局域性 (local) 的，這意味著我們不需要走訪到創始交易來計算所有的東西。
+特別是，注意到我們不需要計算整個 tangle 的累積權重。最多只須計算間接驗證與隨機漫步起始交易累積權重。
 
 \begin{figure}
  \centering \includegraphics[width=0.81\textwidth]{tip_Markov} 
-\caption{Visual representation of the tip selection algorithm for 
-honest tips, as well as the parasite chain. The two red circles 
-indicate an attempted double-spend by an attacker.
-%On the tip selection algorithm. The two red circles indicate
-%an attempted double-spend.
-}
+\caption{tip 選擇演算法與寄生鏈。兩個紅色圓圈所代表的是試圖進行雙重攻擊的交易。}
 \label{f_tip_Markov}
 \end{figure}
 
-To check that the algorithm works as intended, first consider the ``lazy
-tips''. These tips intentionally approve some old transactions
-to avoid doing verification work (Figure~\ref{f_tip_Markov}).
-Even if the particle 
-is on a site approved by a lazy tip, it is not probable that the lazy
-tip would be selected because the difference between cumulative
- weights would be very large and~$P_{xy}$ would be small.
- %, look at~\eqref{trans_probs}.
+為了說明這個演算法如我們所想像的那樣工作，首先考慮那些「懶惰的 tips」
+，他們故意選擇一些較早的交易以避免進行交易的驗證工作(如圖~\ref{f_tip_Markov})。注意到，即使某個交易被這樣的一個 tip 所驗證，
+也不太可能使得懶惰的 tip 被選中，因為累積權重的差異很大，而~$P_{xy}$ 非常小。
 
-Next, consider this alternate attack style: the attacker secretly builds
-a chain 
-%(a ``parasite chain'')
- containing a transaction that empties their account balance to 
-another account under their control, indicated as the leftmost red
-circle in Figure~\ref{f_tip_Markov}. Then, the attacker
-issues a transaction on the main tangle, represented by the rightmost red circle,
-and waits for the merchant to accept it. The parasite chain occasionally
-references the main tangle. However, the cumulative weight is not very 
-large in the parasite chain. It should be noted that the parasite chain cannot 
-reference the main tangle after the merchant's transaction. Furthermore, 
-% and so its sites have
-%good height/score (even better than those of the main tangle),
-%although the cumulative weight is not so big in that chain. 
-%Note also that it cannot reference the main tangle after 
-%the merchant's transaction. Also, 
-the attacker might try to artificially
-inflate the number of tips in their parasite chain 
-at the moment of the attack (Figure~\ref{f_tip_Markov}).
-%as shown on the picture. 
-The attacker's idea is to make the nodes issuing new transactions 
-reference the parasite chain so that the honest branch of the tangle will
-be orphaned.
+接下來，考慮另一種攻擊方式：攻擊者秘密地構建一條鏈，
+其中包含一筆交易用來從一個帳戶清空餘額並轉移到他所控制的另一個帳戶中，圖~\ref{f_tip_Markov} 中左邊的紅色圓圈。
+然後攻擊者在主 tangle 中發起另一筆交易，圖~\ref{f_tip_Markov} 中右邊的紅色圓圈，並等待商家接受它。
+寄生鏈偶爾指向主 tangle，然而寄生鏈的累積權重並不大。注意到寄生鏈在商家發起的交易後不能夠再指向主 tangle 了。
+而且，攻擊者可能試圖在攻擊的時候人為地任意增加寄生鏈的 tips，(圖~\ref{f_tip_Markov})。
+攻擊者是想要讓其他交易來驗證和指向寄生鏈，從而使得「誠實的」tangle 被孤立。
 
-It is easy to see why the MCMC selection algorithm
- will not select one of the attacker's tips with high probability.
-%Basically, the 
-The reasoning is identical to the lazy tip scenario:
-%the same as why the algorithm does not 
-%select the lazy tips:
- the sites on the parasite chain will
-have a cumulative weight that is much smaller 
-than the sites that they reference on the main tangle.
- Therefore, it is not probable that the random
-walker will ever jump to the parasite chain unless it begins there,
-and this event is not very probable either because the main tangle contains
-more sites. 
+現在可以很容易地看到為什麼 MCMC 選擇演算法具有很高的機率不去選擇攻擊者的任何一個 tips。
+這個演算法也同樣不會去選擇那些「懶惰」的 tips，其原因基本上是一樣的：
+寄生鏈上的交易相比於那些他們指向的主 tangle 上的交易的累積權重要小得多。
+因此，隨機行走不太可能會跳到寄生鏈，除非是從寄生鏈開始，但是這也不太可能，因為主 tangle 包含更多的交易。
+ 
+這裡提供一個附帶的保護措施，我們可以先用較大的 $\alpha$ 值選擇一個「模範的 tip」(幾乎是決定性的)，
+再用較小的 $\alpha$ 執行真正的 tip 的選擇。然後比對我們(間接)驗證的交易是否跟「模範的 tip」一樣。
 
-As an additional protecting measure, we can 
-first ran a random walk with a large~$\alpha$ (so that it is 
-in fact ``almost deterministic'') to choose a 
- ``model tip''; then, use random walks with small~$\alpha$
-for actual tip selection, but verify if the (indirectly)
-referenced transactions are consistent with the model tip.
+我們也可以發現，對於「總是」朝 tip 方向走的隨機漫步，直接使用遞迴，便可以簡單快速地計算出口的機率分布;這是我們「不希望」節點做的事。
+然而或許可以透過以下修正我們的方法:每一步的隨機漫步中，有 (假設) $\frac{1}{3}$ 的機率會往回走(遠離 tips 一步)。
+這種漫步最後會快速地到達 tips (因為它會漂往 tips)，但是難以計算出口的機率分布。
 
-Observe also that,
-for a random walk that \emph{always} moves towards the tips 
-it is very simple and rapid to calculate the exit probability distribution using a straightforward recursion; this is something
-that we \emph{do not} want the nodes to do. 
-However, it is possible to modify our approach in the following
-way: on each step, the random walk may
- backtrack (i.e., go 1 step away from the tips) 
-with probability (say) $\frac{1}{3}$ 
-(and divide the remaining $\frac{2}{3}$ as before). 
-The walk will reach the tips very queckly anyway 
-(because it has a drift towards the tips), 
-but it will not be so easy to calculate the exit measure. 
-% It is good that it's not easily calculable -- 
-% the "selfish" nodes won't have easy time.
+接著讓我們說明為什麼節點要遵循這個演算法。回顧我們在第~\ref{s_general} 節所提到的，
+假設至少一定「好的」比例的節點會遵循「參考的」演算法是非常合理的。
+而且因為計算力及網路延遲，tip 選擇演算法會傾向針對過去 tangle 的狀態計算，就是在發起交易的當下狀態。
+現在，故意採用更久以前的狀態可能是個好主意\footnote{
+隨機漫步者會從以前的某個狀態中找到之前的 tip，並持續隨機漫步道現在 tangle 中「真正的」tip}，如我們一直以來的解釋。
+想像一個「自私的」節點只想增加他的交易被驗證的機會與速度。這節提到的 MCMC 演算法定義了一個機率分佈的 tips 集合，
+更明確的說，對於節點而言，第一首選的 tip 會是機率最大的。
+然而，若其他節點也很「自私」而且用相同方法的話，那他們全部都會失敗。
+「許多」新交易會在同一時間驗證相同的兩個 tips，因此在接下來的驗證過程會有太多競爭。
+由於節點都是使用過去 tangle 的某個狀態，因此節點並不會馬上「感受到」因同時大量驗證這兩個 tips 後讓累積權重大幅增加的結果。
+因此，即使是自私的節點也會採用隨機的 tip 驗證演算法\footnote{
+如先前所述，比起跑多次 MCMC 演算法，除了往回走似乎沒有更簡單的方法尋找哪些 tips 比較「好」(也就是，被「誠實的節點」選到的機率較高)。
+然而，多次執行 MCRW 需要時間與資源: 在這上面花了時間後，tangle 的狀態早已改變，所以設置可能要重新開始。
+這就解釋了為什麼節點沒有放棄 MCMC 的理由，至少他們假設有很大比例的其他節點都依循預設的 tip 選擇方法。}
+而被選到的 tips 的機率與原本的機率分佈很接近。我們並沒有宣稱這個機率分佈的總和會等於原本的機率和，
+但上述的討論我們可以發現，兩者應該很接近。這表示選擇「壞」tip 的機率應維持低機率。在任何情況，
+並沒有太多的誘因讓自私的節點存在，因為只有減少一點點的驗證時間，這與其他分散式架構有根本上的不同，如比特幣。
+重要的是，節點沒有理由放棄 MCMC tip 選擇演算法。
 
-Let us comment on why 
- the nodes would follow this algorithm.
-Recall from Section~\ref{s_general} that
-it is reasonable to assume that at least a ``good'' proportion
-of the nodes will follow the \emph{reference} algorithm.
-Also, because of computational and network delays, the 
-tip selection algorithm would rather work with a past snapshot
-of the tangle with respect to the moment when a transaction
-is issued. \emph{It may be a good idea to intentionally
-move this snapshot to a time point further in the past\footnote{First
-the random walker finds a former tip with respect to that snapshot,
-and then it continues to walk towards the ``actual'' tips
-on the current tangle.}} in the reference algorithm 
-for the reasons that we explain in the sequel.
-Imagine a ``selfish'' node that just wants to maximize 
-the chances of their transaction being approved quickly.
-The MCMC algorithm of this section, which is adopted by a
- considerable proportion of nodes, 
-defines a probability
-distribution on the set of tips. 
-It is clear that a natural first choice for a selfish node would be
-to choose the tips where the maximum of that distribution 
-is attained. However, if many other nodes also behave
-in a selfish way 
-%(which is quite reasonable to assume as well)
- and use the same strategy, which is a reasonable assumption, 
- then they all 
-will lose. \emph{Many} new transactions will approve 
-the same two tips at roughly the same time, therefore
-generating too much competition between them for subsequent approval.
-It should also be clear that nodes will not immediately ``feel'' the cumulative 
-weight increase caused by this mass approval of the same two tips since 
-the nodes are using a past snapshot.
-%Since the nodes use a past snapshot, they will not yet ``feel''
-%the cumulative weight increase caused by this mass approval
-%of the two tips.
- For this reason, even a selfish node would have 
-to use some random tip approval algorithm\footnote{as noticed
-before, for a backtracking walk there 
-seem to be no easy way to discover which tips are 
- better (that is, more likely to be selected
-by ``honest'' nodes) other than running the MCMC many times.
-However, running MCRW many times requires time and other
-resources; after one spends some time on it, 
-the state of the tangle will already change, 
-so one would possibly even have to start anew.
-This explains why nodes do not have reasons
-to abandon the MCMC tips selection strategy in favor
-of something else, at least if they assume that a 
-considerable proportion of the other nodes follow
-the default tips selection strategy.}
- with a 
-probability distribution for tip selection that is close to
-% the selected tips should
-%be, in some sense, ``not far away'' from
- the default probability distribution produced
-by the reference tip selection algorithm.
-We do not claim that this ``aggregated'' probability
-distribution
-would be equal to the default probability distribution in the presence of selfish nodes. 
-However, the above argument shows that it should be close to it.
-This means that the probability of many nodes attempting 
-to verify the same ``bad'' tips would remain small. 
-% selecting ``bad'' tips would remain small. 
-In any case, 
-%(differently from Bitcoin), 
-there is not a large incentive for the nodes to be selfish 
-because possible gains only amount to a slight decrease 
-in confirmation time. This is inherently different from other 
-decentralized constructs, such as Bitcoin. The important 
-fact is that nodes do not have reasons to abandon the
- MCMC tip selection algorithm.
+我們想要再提及轉移機率的定義，不一定如~\eqref{trans_probs} 那樣所定義的一成不變。除了指數函數外，
+我們還可以選擇其他衰減更快的函數，比如~$f(s)=s^{-3}$。也可以自由的選擇 $W$ 與 $N$。
+此時，還未有更明確的理論告訴我們該如何設定這些參數，
+總之，我們認為這一節最主要的貢獻就是提出 MCMC 做為 tip 選擇演算法；。
 
-
-We would like to mention that the definition of transition 
-probabilities, as given in~\eqref{trans_probs}, has not been 
-set in stone.
-% Also, it is not set in stone that the transition probabilities
-%should necessarily be defined as in~\eqref{trans_probs}.
-Instead of the exponent, one can use a different function 
-that decreases rapidly, such~$f(s)=s^{-3}$. 
-There is also freedom for choosing~$W$ and~$N$ as well.
-At this point in time, it is unclear if there are any theoretical 
-arguments that show exactly in which way these parameters 
-should be chosen. In sum, we feel that the main contribution 
-of this section is the idea of using MCMC for tip selection.
-%In fact, the author's feeling is that the main contribution
-%of this section is the very idea of using MCMC for tip selection;
-%it is unclear if there is any ``theoretical''
-%argument that shows exactly in which way these parameters
-%must be chosen.
 
 \subsection{Splitting attack}
 \label{s_splitting}
