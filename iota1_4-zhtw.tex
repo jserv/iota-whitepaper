@@ -681,136 +681,49 @@ $\phi\big(\frac{3}{8}\big)\approx 0.3558$，
 總之，我們認為這一節最主要的貢獻就是提出 MCMC 做為 tip 選擇演算法；。
 
 
-\subsection{Splitting attack}
+\subsection{分裂攻擊}
 \label{s_splitting}
-Aviv Zohar suggested the following attack scheme against the 
-proposed MCMC algorithm.
-In the high-load regime, 
-an attacker can try to split the tangle into two branches 
- and maintain the balance between them.
-This would allow both branches to continue to grow.  
-The attacker must place at least 
-two conflicting transactions at the beginning of the split to prevent an honest node from effectively joining the branches 
-by referencing them both simultaneously.
-% Thereby split the power of the entire network. The network itself 
-% work (because of the use of MCMC) almost equally to both sectors 
-% and an attacker would only spend a little to balance. 
-% In other words, weak inhibitor valid decision at will and splits 
-% the computing power of the network to monitor contradictory versions. 
-% It can also incorporate double spend parallel attacks.
-Then, the attacker hopes that roughly half of the network would
-contribute to each branch so that they 
-would be able to ``compensate'' for random fluctuations,
-even with a relatively small amount of personal computing power. 
-If this technique works, the attacker would be able to spend the same
-funds on the two branches.
+針對 MCMC 演算法的攻擊策略由 Aviv Zohar 提出。在高負載區，攻擊者可以試圖將 tangle 分裂成兩個分支，
+並在這兩個分支中均保持自己的餘額，這會允許兩個分支繼續增長。
+攻擊者則必須在分裂開始的時候放入至少兩個相互衝突的交易，預防誠實的節點同時指向兩個分支而有效地合併兩個分支。
+接著，攻擊者希望網路中約一半的交易分別貢獻給兩個分支，從而可以「補償」 隨機的漲落，即使他所擁有的只有相對較小的計算能力。
+若這個方法成功，攻擊者便可以在兩個分支中都使用同一筆資金。
 
-To defend against such an attack, one needs to use a
-``sharp-threshold'' rule 
-%(like ``select the longest chain'' in Bitcoin) 
-that makes it too hard to maintain the balance
-between the two branches. An example of such a rule is 
-selecting the longest chain on the Bitcoin network. Let us 
-translate this concept to the tangle when it is undergoing a 
-splitting attack. Assume that
-the first branch has total weight 537, and the second branch 
-has total weight 528. If an honest
-node selects the first branch with probability very close to~$1/2$,
-then the attacker would probably be able to maintain the
-balance between the branches. However, if an honest
-node selects the first branch with probability
-much larger than $1/2$, then the attacker would probably
-be unable to maintain the
-balance. The inability to maintain balance between the two branches in 
-the latter case is due to the fact that after an inevitable random fluctuation,
-the network will quickly choose one of the branches and abandon the other. 
-In order to make the MCMC algorithm behave this way,
-one has to choose a very rapidly decaying function~$f$,
-and initiate the random walk at a node with
- large depth so that it is highly probable
-that the walk starts before the branch bifurcation.
-In this case, the random walk would choose the ``heavier''
-branch with high probability, even if the difference in
- cumulative weight between the competing branches is small. 
-
-It is worth noting that the attacker's task is very 
-difficult because of network synchronization
-issues: they may not be aware of a large number 
-of recently issued transactions\footnote{The ``real''
-cumulative weights may be quite different from 
-what they believe.}. Another effective 
-method for defending against a 
-splitting attack would be for a sufficiently
-powerful entity to instantaneously publish a large number
- of transactions on one branch, thus rapidly changing the power balance
-and making it difficult for the attacker to deal with this change. 
-If the attacker manages to maintain
-the split, the most recent transactions will only have around $50$\%
- confirmation confidence (Section~\ref{s_general}), and the branches 
-will not grow. In this scenario, the ``honest'' nodes may decide to start 
-selectively giving their approval to the transactions that occurred before 
-the bifurcation, bypassing the opportunity to approve the conflicting 
-transactions on the split branches.
-%only the pre-split transactions then (and, in particular,
-%not approve neither of the two conflicting transactions).
-
-One may consider other versions of the 
-tip selection algorithm. For example, if a node sees
- two big subtangles, 
-then it chooses the one with a larger sum of own weights 
-before performing the MCMC tip selection algorithm outlined above.
-%and then does the tip selection only there using the 
-%above MCMC algorithm. 
-
-The following idea may be worth considering for future implementations. 
-One could make the transition probabilities defined 
-in~\eqref{trans_probs} depend 
-on both $\HH_x-\HH_y$ and $\HH_x$ in such a 
-way that the next step of the Markov chain is almost deterministic
-when the walker is deep in the tangle, yet becomes more 
-random when the walker is close to tips. This will help avoid entering the 
-weaker branch while assuring sufficient randomness when choosing the 
-two tips to approve.
-% (so that there is enough randomness in the choice
-%of the two transactions to approve). 
+為了抵抗這種攻擊，我們需要使用一些「高門檻」的規則使得同時維持兩個分支上的餘額是十分困難的，如在比特幣網路中選擇最長鏈。
+讓我們將這個概念轉換到正在遭受分裂攻擊的 tangle 上，
+假設第一個分支具有權重共 537，而第二個分支的總權重為 528。
+若一個誠實的節點選擇第一分支的機率就非常接近於~$1/2$，
+這樣很可能攻擊者也可以在兩個分支中都保持帳戶餘額。然而，如果誠實節點偏向於第一分支的機率比~$1/2$ 要大很多的話，
+那麼攻擊者就很難維持兩個分支的餘額。經過不可避免的無規漲落，網路會迅速選擇其中的一個分支，而拋棄掉另一個。
+為了使得 MCMC 演算法具有這樣的行為，我們需要選擇一個迅速衰減函數~$f$，
+並且在一個相對較大深度的節點開始進行隨機漫步，這樣就可以極大可能性地在網路分裂之前開始隨機漫步。
+這種情況下，無規行走就會有很大機率選擇「較重」的分支，即使兩個分支的權重差很小。 
+   
+值得注意的是由於網路同步的問題，攻擊者的難度變得非常高: 他們可能不會注意到一個近期發起的大量交易\footnote{
+「真正的累積權重」可能與他們認知的大相逕庭。}另一個有效抵抗分裂攻擊的方法是一個擁有足夠計算力的節點，
+立即在某一個分支上發起大量的交易，這會讓攻擊者很難面對這樣的巨大改變。如果攻擊者試圖主導分裂，
+最近期的交易指會有 $50$\% 被驗證的信心 (第~\ref{s_general} 節)，且分支不會再成長。
+在這個架構下，誠實的節點可能會決定開始選擇性的驗證分裂之前的交易，而避免會驗證到分支上的衝突交易。
+ 
+也可以考慮其他改進的 tip 選擇演算法。比如說，如果一個節點看到兩個大的 subtangles，
+那麼在進行 MCMC 演算法前就會選擇自身權重之和較大的一個分支。
+如下思路也許值得考慮： 設想在~\eqref{trans_probs} 中的轉移機率不僅僅與 $\HH_x-\HH_y$ 相關，而且還依賴於 $\HH_x$ ，
+這樣接下來的馬可夫鏈在隨機漫步的時候進入較深的 tangle 中就近乎是確定性的，
+而當接近于 tips 的時候，會避免進入較弱的分支，因此也就有足夠的隨機性來選擇兩筆交易進行驗證。
 
 
-
-\paragraph{Conclusions:}
+\paragraph{結論:}
 \begin{enumerate}
- \item We considered attack strategies for when an 
-attacker tries to double-spend by ``outpacing'' the system.
- \item The ``large weight'' attack means that, in order to 
-double-spend, the attacker tries to give a very large weight
-to the double-spending transaction so that it would 
-outweigh the legitimate subtangle. This strategy would be 
-a menace to the network in the case where the allowed own weight is
-unbounded. As a solution, we may limit the own weight
-of a transaction from above, 
-or set it to a constant value.
- \item In the situation where the maximal own weight
-of a transaction is~$m$, the best attack strategy
-is to generate transactions with own weight~$m$
-that reference the double-spending transaction. 
-When the input flow of ``honest''
-transactions is large enough compared to the 
-attacker's computational power, the probability
-that the double-spending transaction
-has a larger cumulative weight can be estimated
-using the formula~\eqref{double_ever} (see also
-examples below~\eqref{double_ever}).
- \item The attack method of building a ``parasite chain''
-makes approval strategies based on height or score
-obsolete since the attacker's sites will have higher values 
-for these metrics when compared to the legitimate tangle. On the other hand,
-the MCMC tip selection algorithm described in Section~\ref{s_parasite}
-seems to provide protection against this kind of attack.
-\item The MCMC tip selection algorithm also offers protection against 
-the lazy nodes as a bonus.
-%As a 
-%bonus, it also offers protection against the ``lazy nodes'',
-%i.e., those that just approve some old transactions to avoid 
-%doing the calculations necessary for validating the tangle.
+ \item 我們針對攻擊者試圖超越網路並進行雙重交易，考慮了幾種攻擊策略。
+ \item 「大權重」攻擊意味著，為了進行雙重，攻擊者試圖發起一筆大權重雙重交易，從而超過合法的 subtangle。
+ 這種攻擊在交易的自身權重不設上限的情況下，對於網路的確是一個威脅。
+ 解決方法就是，我們可以限制交易的自身權重上限，或者將自身權重設為常數。
+ \item 當交易自身權重最大值為 $m$ 的時候，最好的攻擊策略是產生一筆自身權重為~$m$ 的交易，
+ 並且指向驗證雙重支付交易。如果交易輸入流中的誠實交易相比攻擊者的計算能力要足夠大的時候，
+ 那麼雙重交易具有更多的累積權重的機率可以通過公式~\eqref{double_ever} 來進行估計（同時也可以參考~\eqref{double_ever} 下面的例子）。
+ \item 構建「寄生鏈」的攻擊可以使得基於高度和積分的驗證策略無效，因為攻擊者可以得到比合法 tangle 更高的積分。
+ 而~\ref{s_parasite} 節中描述的 MCMC tip 選擇演算法可以抵抗這種攻擊。
+\item MCMC tip 選擇演算法還可以抵抗「懶惰節點」。
 \end{enumerate}
 
 
