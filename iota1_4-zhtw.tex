@@ -728,59 +728,31 @@ $\phi\big(\frac{3}{8}\big)\approx 0.3558$，
 
 
 
-\section{Resistance to quantum computations}
+\section{抵抗量子計算}
 \label{s_quantum}
-It is known that a sufficiently large
- quantum computer\footnote{Still a hypothetical construct as of today.}
-  could be very efficient for handling problems
-that rely on trial and error to find a solution. The process of finding a nonce
-in order to generate a Bitcoin block is a good example 
-of such a problem. As of today, one must 
-check an average of $2^{68}$ nonces to find a suitable hash
-that allows a new block to be generated. 
- It is known (see e.g.~\cite{BHT}) that a quantum computer would need 
-$\Theta(\sqrt{N})$ operations to solve a problem that is analogous to 
-the Bitcoin puzzle stated above. This same problem would need
-~$\Theta(N)$ operations on a classical computer.
-Therefore, a quantum computer would be 
-around $\sqrt{2^{68}}=2^{34}\approx 17$ billion times
-more efficient at mining the Bitcoin blockchain than a classical computer.
-Also, it is worth noting that
- if a blockchain does not increase its difficulty in response 
-to increased hashing power, there would be an 
-increased rate of orphaned blocks.
-
-For the same reason, a ``large weight'' attack would also be much more 
-efficient on a quantum computer.
-%described above would also be much more efficient on a quantum
-%computer. 
-However, capping the weight from above, as suggested
-in Section~\ref{s_attacks}, would effectively prevent
-a quantum computer attack as well. This is evident in iota because 
-the number of nonces that one needs to check in order
-to find a suitable hash for issuing a transaction is not 
-unreasonably large. On average, it is around~$3^8$. 
-The gain of efficiency for 
-an ``ideal'' quantum computer would therefore
-be of order $3^{4}=81$, which is already quite 
-acceptable\footnote{Note that $\Theta(\sqrt{N})$
-could easily mean $10\sqrt{N}$.}.
-More importantly, the algorithm used in the iota implementation 
-is structured such that the time to find a nonce is 
-not much larger than the time needed for other tasks that 
-are necessary to issue a transaction. The latter part is much
- more resistant against quantum computing, and therefore 
- gives the tangle much more protection against an adversary with a 
- quantum computer when compared to the (Bitcoin) blockchain.
+足夠大的量子電腦\footnote{直到今天仍然只是假設}在解決那些只能通過猜測結果並重複進行檢驗的問題時具有極高的效率。
+為生成一個比特幣區塊而尋找 nonce 就是這類問題中的一個很好的例子。在目前，
+平均來說必須查找 $2^{68}$ 個 nonces 從而找到一個合適的雜湊值生成區塊。
+眾所周知（例如文獻~\cite{BHT}）量子電腦在解決比特幣問題時的複雜度為 $\Theta(\sqrt N)$，
+而對於傳統的電腦而言，其複雜度則是 $\Theta(N)$ 。
+因此量子電腦在比特幣挖礦方面相比常規的電腦提升 $\sqrt{2^{68}}=2^{34}\approx 17$ 億倍的效率。
+值得一提的是，如果區塊鏈在面對雜湊運算能力增加的時候不能夠同時增加挖礦難度的話，那麼這就將導致大量孤塊的增加。
+ 
+基於相同的原因，「大權重」攻擊在量子電腦上同樣具有更高的效率。
+然而，前面所講的權重上限設置，如第~\ref{s_attacks} 節所建議的，可以有效地抵抗量子電腦的攻擊。
+在 IOTA 系統中，為發送交易而需要尋找合適的雜湊時，其尋找的 nonces 並不是很大，大概是 $3^8$ 左右。
+因此對於一個「理想」的量子電腦來說，其效率的提高也就在 $3^4=81$ 倍這個數量級，
+這相對來說是可以接受的\footnote{記住 $\Theta(\sqrt N)$ 也許意味著大概是 $10\sqrt N$}。
+更重要的是，在 IOTA 的演算法中，發送交易的時候，尋找 nonce 所需要的時間不比其他任務所需要的時間多很多，
+而後面提到的那部分任務相對來說是更容易抵抗量子電腦的，也因此比起區塊鏈(比特幣) tangle 提供更多的保護以防範量子電腦攻擊。
+ 
 
 
-
-\section*{Acknowledgements}
-The author thanks  Bartosz Kusmierz, Cyril Gr\"unspan,
-Olivia Saa, and
- Toru Kazama who pointed
-out several errors in earlier drafts, and James Brogan
-for his contributions towards making this paper more readable.
+\section*{感謝}
+感謝 Bartosz Kusmierz, Cyril Gr\"unspan,
+Olivia Saa, 和
+ Toru Kazama，指出幾處先前版本的錯誤，以及 James Brogan
+讓本篇白皮書更容易閱讀。
 
 
 
