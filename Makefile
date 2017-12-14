@@ -12,4 +12,4 @@ $(IOTA)-zhtw.pdf: $(IOTA)-zhtw.tex
 	pdflatex $^
 
 clean:
-	$(RM) $(IOTA).pdf $(IOTA).aux $(IOTA).log
+	$(RM) $(IOTA)*.pdf $(IOTA)*.aux $(IOTA)*.log

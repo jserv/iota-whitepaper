@@ -5,6 +5,7 @@
 \usepackage{amsthm}
 \usepackage{graphicx}
 \usepackage{mathtools}
+\usepackage{CJKutf8}
 
 \addtolength{\textwidth}{1.5cm}
 \hoffset=-0.7cm
@@ -27,1296 +28,371 @@
 
 \title{The Tangle}
 \author{Serguei Popov\thanks{
-a.k.a.\ \texttt{mthcl}; author's contact information:
+慣用代稱為 \texttt{mthcl}; 作者聯絡資訊:
 \texttt{serguei.popov@iota.org}}
 %, for \texttt{Jinn Labs}
 }
 \date{October 25, 2017. Version 1.4}
 
+
 \begin{document}
+\begin{CJK}{UTF8}{bkai}
  \maketitle
-\begin{abstract}
-In this paper we analyze the mathematical foundations 
-% that establishes the foundation
-of IOTA, a cryptocurrency for the Internet-of-Things (IoT) industry. 
-The main feature of this novel cryptocurrency is the \emph{tangle}, 
-a directed acyclic graph (DAG) for storing transactions. The tangle
-naturally succeeds the blockchain as its next evolutionary step,
-and offers features that are required to establish a machine-to-machine micropayment
-system. 
-% to be conducted on a global scale. 
+\begin{abstract}  
 
-An essential contribution of this paper is a family of
-Markov Chain Monte Carlo (MCMC) algorithms. These algorithms
-select attachment sites on the tangle for a transaction that
-has just arrived.
+在本論文中我們分析了 IOTA (一種用於物聯網 [IoT] 行業的加密貨幣) 中所使用的主要技術。
+這個新穎的加密貨幣最主要的特點就是 \emph{tangle}，以一個有向無環圖 (DAG) 存放交易資訊。
+tangle 不僅成功的讓區塊鏈往前邁進一步，其特性更是符合 M2M 小額支付系統的需求。
 
-%used as a 
-%backbone of ​iota​ (a cryptocurrency for Internet-of-Things industry). 
-%Its main feature is that, instead of a blockchain,
-%we use a \emph{tangle} (that is, a directed acyclic graph) 
-%for storing transactions.
-%This technology naturally succeeds the blockchain technology as its 
-%next evolutionary step and comes out with features required 
-%for micropayments conducted on a global scale. 
-%
-%In particular, one of contributions of this
-%paper is a family of MCMC algorithms for selecting the sites
-%of the tangle where a newly arrived transaction should
-%be attached.
+一個本篇論的關鍵貢獻是馬可夫鏈蒙地卡羅 (Markov Chain Monte Carlo, MCMC) 演算法。
+這些演算法會為新的交易選擇要接在哪些既有交易之後。                                        
 
-% In this paper we briefly describe the design of the 
-% blockchainless cryptocurrency system \emph{iota}, 
-% and make some calculations regarding the probabilistic 
-% aspects of this system. 
-% In particular, we discuss the question of system's security.
 \end{abstract}
 
-\section{Introduction and description of the system}
+\section{系統介紹與描述}
 \label{s_general}
 
-The rise and success of Bitcoin during the last six
-years proved that blockchain technology has real-world value.
-% the value of blockchain technology.
-However, this technology also has a number of drawbacks
-that prevent it from being used as a generic platform for 
-cryptocurrencies across the globe. One notable drawback is the
-concept of a transaction fee for transactions of any value.
-The importance of micropayments will increase in the 
-rapidly developing IoT industry, and paying a fee that is \emph{larger}
-than the amount of value being transferred is not logical. 
-Furthermore, it is not easy to get rid of fees in the blockchain 
-infrastructure since they serve as an incentive for the creators of
- blocks. This leads to another issue with existing cryptocurrency 
-technology, namely the heterogeneous nature of the system. There
-are two distinct types of participants in the system, those who issue 
-transactions, and those who approve transactions. 
-The design of this system creates unavoidable discrimination of 
-some patricipants, which 
-in turn creates conflicts that make all elements spend resources 
-on conflict resolution. The aforementioned issues justify a search 
-for solutions essentially different from blockchain technology, the 
-basis for Bitcoin and many other cryptocurrencies.
-%, which prevent it to be used as a one and only global platform
-% for cryptocurrencies.
-%Among these drawbacks, an especially notable one is the impossibility
-%of making micro-payments, which have increased importance for the 
-%rapidly developing Internet-of-Things industry.
-%Specifically, in the currently available systems one must
-%pay a fee for making a transaction; 
-%so, transferring a \emph{very} small amount just makes no sense
-%since one would have also to pay the fee which is many 
-%times larger. On the other hand, it is not easy to get rid
-%of the fees since they serve as an incentive for the 
-%creators of the blocks. It should be also observed that
-%existing cryptocurrencies are heterogeneous systems
-%with clear separation of roles (transaction issuers, transaction approvers). 
-%Such systems create unavoidable discrimination of some of their
-%elements which in turn creates conflicts and makes 
-%all elements spend resources on conflict resolution.
-%All this justifies a search for solutions essentially different from
-%the blockchain technology, on which the Bitcoin and many
-%other cryptocurrencies are based.
+在過去的六年中比特幣的興起和成功證明了區塊鏈技術的價值所在。
+然而，這種技術也有許多缺點，阻礙了它成為全球通用的加密貨幣平臺。
+在這些缺點中，特別值得提及的就是無法進行小額支付，而小額支付在迅速發展的物聯網行業中的重要性不斷增加。
+在現今的系統中，使用者須支付手續費才能產生交易；因此，為了支付極少的金費而須再付好幾倍的手續費並不合理。
+且對產生區塊的人而言，手續費就是動機，因此想完全摒除掉並不容易。
+另外亦須關注的是現存的加密貨幣都是清楚區分不同角色(如交易發起者，交易驗證者)的異質 (heterogeneous) 系統。
+這種明顯區分參與者的設計，容易造成資源搶奪與浪費的現象。
+這就需要尋找一些完全不同於比特幣和其他加密貨幣的區塊鏈技術的解決方案。
 
-In this paper we discuss 
-an innovative approach that does not incorporate blockchain 
-technology. This approach is currently being implemented as 
-a cryptocurrency called \emph{iota}~\cite{iota}, which was designed 
-specifically for the IoT industry. The purpose of this paper 
-is to focus on general features of the tangle,
- and to discuss problems that arise 
-when one attempts to get rid of the blockchain and maintain 
-a distributed ledger. The concrete implementation of the iota 
-protocol is not discussed.
-%a blockchainless approach,
-%which is currently being implemented in \emph{iota}~\cite{iota},
-%recently designed as
-%  a cryptocurrency for the Internet-of-Things industry. 
-  
-% An important part of our proposal is a novel cryptographic
-% signing algorithm, that will be described in detail in another
-% whitepaper~\cite{iota_crypto}. 
-% We, however, focus more on general features and problems/difficulties
-% that arise when one attempts to get rid of the blockchain,
-% than on concrete details of iota's implementation. 
-% Of course, any theoretical analysis would be
-%  incomplete without feedback from a working version
-% of such a system; we hope that soon such a feedback would be 
-% available.
-%We, however, focus more on general features and problems/difficulties
-%that arise when one attempts to get rid of the blockchain,
-%than on concrete details of iota's implementation. 
+在本論文中，我們討論了一個創新的方案，但並不能與現今區塊鏈技術相容。
+而此方案正以加密貨幣的形式實做，稱之為\emph{IOTA}~\cite{iota}，針對物聯網工業所設計。
+此篇論文旨在聚焦於 tangle 的一般特性，以及探討當某人試圖捨棄區塊鏈並維護一個分散式帳本時會衍生的問題。
+我們並不會討論 iota 具體的實做細節。
 
-In general, 
-%iota 
-a tangle-based cryptocurrency works in the following way. 
-Instead of the global blockchain, there is a DAG 
-%($=$ directed acyclic graph) 
-that we call the \emph{tangle}. 
-The transactions issued by nodes constitute the site set of the tangle graph,
-which is the ledger for storing transactions.
-% (i.e., the tangle graph is the ledger for storing transactions).
-%Its 
-The edge set of the tangle is obtained in the following way: when a new transaction 
-arrives, it must \emph{approve} 
-two\footnote{This is the simplest approach. One may also study
-similar systems where transactions must approve~$k$ other transactions
-for a general~$k\geq 2$, or 
-%consider more complicated rules
-have an entirely different set of rules.}
- previous transactions. these approvals 
-are represented by directed edges, as shown in
-%on 
-Figure~\ref{f_weights}\footnote{Time always increases from left to right in each figure.}.
-%and others
-If there is 
-%no 
-not a directed edge between transaction~$A$ 
-and transaction~$B$, but there is
-a directed path of length at least two from~$A$ 
-to~$B$, we say that~$A$ \emph{indirectly approves}~$B$.  
-There is also the ``genesis'' 
-transaction, which
-is approved either directly or indirectly
-% (directly or indirectly) 
-by all other
-transactions (Figure~\ref{f_reverse_weights}).
-The genesis is described in the following way.
-In the beginning of the tangle, there was an address with a balance 
-% containing all the tokens. 
-that contained all of the tokens. 
-% Then 
-The genesis transaction 
-sent these tokens to several other ``founder'' addresses. 
-Let us stress that all of the tokens were created in the genesis transaction.
-% (no other tokens will be created),
-No tokens will be created in the future, and there will be no mining
-in the sense that miners receive monetary rewards ``out of thin air''.
-% and there no mining in the sense ``miners receive
-% monetary rewards''.
+在一般情況下，IOTA 按如下方式運行。如前所述，不存在全域的區塊鏈，取而代之的是一個 DAG（有向無環圖），我們稱之為 \emph{Tangle}。
+通過節點發出的所有交易構成了這個 Tangle (存所有交易的帳本) 的集合。
+這個圖的邊是這樣形成的：當一個新的交易產生，它必須\emph{驗證}之前的兩個\footnote{這是最簡單的方法。
+讀者有可能也研讀過相似的系統，規定每筆交易必須驗證 $k$ 筆其他交易，而通常 $k\geq 2$ ，或是採用完全不同的驗證規則。}交易，
+這些驗證關係就通過有向的邊來表示，如圖~\ref{f_weights}\footnote{每張圖的時間軸皆為左至右}所示
+（在圖中，時間走向皆是從左到右）。
+如果從交易~$A$ 到交易~$B$ 之間沒有直接連接的有向邊，而有至少長度為 2 的有向邊路徑存在，我們就說交易~$A$ \emph{間接地驗證}了交易~$B$。
+另外，有一個「創世交易」 (genesis trasaction)，被所有交易直接或間接驗證，如圖~\ref{f_reverse_weights}。
+創世交易的描述如下:在最一開始有一個地址 (address) 擁有全部的 token，接著創世交易會把金錢轉給其他 ``founder'' 的地址。
+我們強調所有的 token 皆是創世交易所產生的(不會再產生新的 token)，而且不會再有「挖礦」就可以收到金錢獎勵的概念了。\leavevmode\\
+術語解釋: \emph{sites}為在 Tangle 圖上的交易;
+\emph{節點}(node) 組成整個網路，同時也是交易發起與驗證者。\leavevmode\\
+整個架構的宗旨如下:使用者必須驗證其他交易才能發起交易，為整個網路的安全性盡一份力。
+我們假設節點檢查認證的交易是否存在衝突。如果節點發現某筆交易與 tangle 的歷史紀錄衝突，便不會直接或者間接的認證具有衝突的交易\footnote{若某節點發起的新交易驗證了衝突交易，
+那麼它便有不被其他節點所驗證的風險，而被摒棄。}。
+隨著交易被越來越多其他交易直接或者間接的所驗證，這個交易就愈會被系統所接受；
+換句話說，要接受一個雙重支付 (double-spending) 交易是極為困難的。
+很重要的是我們不會\emph{強制規定}怎麼選擇要驗證的交易;
+而是我們認為如果大量的節點依循一些「參考」的規則，
+那麼各節點就要分別遵守同類別\footnote{更進一步的論述在~\ref{s_parasite}章節}的規則。這是比較合理的假設，特別是在 IoT，節點是裝載各式韌體的晶片。\leavevmode\\
 
-A quick note on terminology: \emph{sites} are transactions
-represented on the tangle graph. The network 
-is composed
-% by
-of \emph{nodes}; that is, nodes are entities that
-issue and validate transactions. 
-
-% Now, t
-The main idea of the tangle is the following: 
-to issue a transaction, users must work to
-approve other transactions. Therefore, users who
-issue a transaction are contributing 
-to the network's security.
-It is assumed that the nodes check if the approved transactions
-are not conflicting. If a node finds that a transaction is in conflict with 
-the tangle history, the node 
-will not approve the conflicting transaction in either a direct or indirect 
-manner\footnote{If 
-a node issues a new transaction that approves conflicting transactions,
- then it risks that other nodes
-will not approve its new transaction, 
-%and so it
-which will fall into oblivion.}. 
-% and do not approve, directly or indirectly,
-%conflicting transactions
-
-As a transaction 
-% gets more and more (direct or indirect) 
-receives additional 
-approvals, it is accepted by the system with a higher level of confidence.
-In other words, 
-it will be 
-% more 
-difficult 
-%(or even practically impossible) 
-to make the system 
-accept a double-spending transaction.
-It is important to observe that we do not \emph{impose}
-any rules for choosing which transactions a node will approve.
-% rather
-Instead, we argue that if a large number of 
-%other 
-nodes follow some ``reference'' rule,
-% (which seems to be a reasonable
-% assumption, especially in the context of IoT, where nodes
-% are specialized chips with pre-installed firmware)
-then for any fixed node it is better to stick to a rule
-of the same kind\footnote{We comment more on this at the 
-end of Section~\ref{s_parasite}}.
-This seems to be a reasonable assumption, especially 
-in the context of IoT, where nodes are specialized 
-chips with pre-installed firmware.
-
-% More specifically, 
-In order to issue a transaction, a node
-does the following:
+要發起一個交易，節點需做以下步驟:
 \begin{itemize}
- \item 
- %First, it 
- The node chooses two other transactions to approve
-% (in general, these two transactions may coincide),
-according to an algorithm. In general, these two
-transactions may coincide.
-%\footnote{see Section~\ref{s_parasite}}.
- \item 
- %It 
- The node checks if the two transactions
-are not conflicting, and does not approve
-conflicting transactions.
- \item For
- % the transaction to be valid, 
- a node to issue a valid transaction,
-the node must solve a cryptographic puzzle 
-% (which may be 
-% computationally demanding)
- similar to those in the Bitcoin blockchain.
- This is achieved by finding a nonce such that the hash
- of that nonce concatenated with some data from the 
- approved transaction has a particular form. In the case
- of the Bitcoin protocol, the hash must have at least a 
- predefined number of leading zeros.
-% (e.g., it needs to find a nonce such that the hash of that 
-% nonce together with some data from the approved transactions 
-% has a particular form, for instance, has at
-% least some fixed number of zeros in front).
-% \item comment on computation and propagation times??
-\end{itemize}
-It is important to observe that
-%, in general, 
-the iota network is asynchronous.
-% have an asynchronous network.
-In general,
-% so that 
-nodes do not necessarily see the same set of transactions.
-It should also be noted 
-% also 
-that the tangle may
-contain conflicting transactions.
-The nodes do not have to achieve consensus on 
-which valid\footnote{Transactions that are issued 
-according to the protocol.
-% i.e., 
-% transactions issued according to the protocol
-} transactions
-have the right
-to be in the ledger,
-% (all of them can be there);
-meaning all of them can be in the tangle.
-%but
-However, in the case where there are conflicting transactions,
-%they 
-the nodes need to decide which transactions will become
-orphaned\footnote{Orphaned transactions are not indirectly
-approved by incoming transactions anymore}.
-% (that is, eventually not indirectly approved by incoming 
-% transactions anymore).
-The main rule that the nodes use for deciding 
-between two conflicting transactions 
-is the following: 
-a node runs the tip selection algorithm\footnote{As mentioned above,
-there is a good reason to assume that other nodes would
-follow 
-%(almost) 
-the same algorithm for tip selection.} 
-(cf.\ Section~\ref{s_parasite}) many times,
-and sees which of the two transactions 
-% of the two is 
-is more likely to be indirectly
-approved by the selected tip. For example,
-if
-%, after 100 runs of the tip selection algorithm,
-a transaction was selected 97 times during 100 runs
-of the tip selection algorithm,
-we say that it is confirmed with~$97\%$ confidence.
-% A reasonable rule of thumb for considering a transaction
-% confirmed can be 
-% the following: first wait until
-% the adaptation period is over (see Section~\ref{s_cum_grow};
-% essentially, that means that ``almost'' all newly arriving
-% transactions indirectly approve our transaction), 
+  \item 
+  根據演算法選擇兩筆交易驗證(這兩筆交易可能會一樣)
+  \item 
+  檢查這兩筆交易有無衝突，且有皆沒有驗證到衝突的交易
+  \item
+  要發起一筆合法 (valid) 交易，節點必須解出一道加密的問題，與比特幣相似。
+  需要找出一個 nonce 讓其與其他驗證交易的資料的 hash 值為特定格式，如在比特幣的協定中， hash 值得前面需有指定個數個 0
+\end{itemize} \leavevmode\\
+重要的是， iota 是一個非同步的網路。通常，節點們並不會看到一樣的交易集合。
+值得注意的是 tangle 可能存在衝突的交易。
+節點間並不需要達成共識，因為合法\footnote{依照協定發起的交易}的交易有權繼續留在帳本中，也就是留在 tangle 中; 
+但要是出現衝突的交易，節點便需要決定哪筆交易要被孤立 (orphaned)\footnote{孤立的交易不會再被新進交易間接驗證}，也就是這筆交易不會再被新進的交易間接驗證。
+決定哪筆交易是要被孤立的主要準則如下: 一個節點進行多次的 tip 選擇演算法\footnote{如上所述，
+我們有好的理由可以假設其他節點會遵循一樣的演算法進行 tip 選擇}(cf.\ ~\ref{s_parasite}  節)，接著觀察哪筆交易較可能被選到的 tip 間接驗證。
+舉例來說: 假設跑了 100 次 tip 選擇演算法，有一筆交易被選到 97 次，我們便說它有 ~$97\%$ 的信心被驗證到。 
 
-Let us also comment on the following question (cf.\ \cite{red_balloons}):
-what motivates the nodes to propagate transactions? 
-% In fact, nodes do not 
-% have motivation 
-%% to not 
-%to not propagate in our system. (this is a double negative, makes wording confusing)
-Every node calculates some statistics, one of which is how many new
-transactions are received from a neighbor.
-If one particular node is ``too lazy'', it will be dropped by its neighbors.
-% So
-Therefore, even if a node does not issue transactions, and hence has no direct 
-incentive to share new transactions that approve its own transaction, it still has
-incentive to participate. 
+我們也一併說明接下來的問題 (cf.\ \cite{red_balloons}): 
+促使節點們產生、傳播 (propagate) 交易的動機是什麼? 
+每個節點會計算一些數據，其中之一是計算會從鄰居接收多少新的交易。
+如果某個特定節點「太懶惰」，便會被它的鄰居捨棄。
+因此，即使節點並沒有發起任何的交易，且沒有分享新的交易來驗證自己交易的動力，但他仍然有動機參與。 
 
-% In the subsequent sections, 
-After introducing some
-notation in Section~\ref{s_weight_algo},
-we discuss algorithms for choosing the two transactions to approve, 
-the rules for measuring the transaction's overall approval
-(Section~\ref{s_cutsets}, especially Section~\ref{s_cum_grow}), 
-and possible
-attack scenarios (Section~\ref{s_attacks}). 
-Also, in the unlikely
-event that the reader is scared by the formulas, they can jump 
-directly to the ``conclusions'' at the end 
-of each section.
+在~\ref{s_weight_algo}  節中簡單介紹一些術語後，我們要討論選擇兩筆交易予以接受納入系統的演算法，
+用於衡量整體交易的驗證演算法（第~\ref{s_cutsets} 節，尤其是~\ref{s_cum_grow} 節），以及可能會受到的攻擊情況（第~\ref{s_attacks} 節）。 
+接著，懼怕數學式的讀者可以直接跳到每一節最後的「結論」。
 
-It should be noted that 
-the idea
-% s about usage 
-of using DAGs in the cryptocurrency 
-%context were 
-space has been around for some time, see~\cite{dag_generalized_blockchain, dagcoin, SZ, LSZ, braids}.
-Specifically,~\cite{SZ} introduces the 
-% so-called 
-GHOST protocol, which proposes a modification 
-of the Bitcoin protocol by making the main ledger a tree 
-instead of a blockchain. 
-It is shown that such a 
-modification 
-% permits to reduce 
-reduces 
-% the 
-confirmation times
-and improves the overall security of the network. 
-In~\cite{LSZ} the authors consider 
-a DAG-based cryptocurrency model. 
-%differently 
-Their model is different than
-our model for the following reasons: the sites of 
-their DAG are blocks instead of individual transactions; 
-the miners in their system compete for transaction fees; 
-and 
-% (not individual transactions)
-% (as in Bitcoin) 
-new tokens may be created by block miners. 
-Also, observe that
-a solution somewhat similar to ours was proposed in~\cite{dagcoin}, although it does not 
-discuss any particular tip approval strategies.
-After the first version of this paper was published,
-several other works 
-% in that direction has 
-that aim to create a DAG-based distributed ledger have appeared,
-e.g.~\cite{SZ_SPECTRE}.
-%which appeared after the first version of this paper
-We 
-% mention 
-also reference another approach~\cite{bitcoinj,lightning} 
-that aims to make Bitcoin
- micropayments possible by establishing peer-to-peer
-payment channels. 
+此外，應該指出的是，有關有向無環圖在加密貨幣領域中的想法已經有一些時日了，
+比如文獻 ~\cite{dag_generalized_blockchain, dagcoin, SZ, LSZ, braids}。
+尤其需要指出的是，文獻 ~\cite{SZ} 中提出是被稱為 GHOST 的協議，修改了比特幣協議，把主要帳本的結構從區塊鏈改為一棵樹(tree); 
+這樣的作法顯示，可以降低驗證時間並提高整體網路的安全性。
+在文獻~\cite{LSZ} 中，作者們提出了基於 DAG 的加密貨幣模型; 
+有別於我們模型的是，組成 DAG 的是區塊 (block)，而非獨立的交易。
+且礦工會競爭手續費，新的金錢也會被創造。
+再來，文獻~\cite{dagcoin} 中提出了一種類似於我們的解決方案，雖然他並沒有討論任何驗證 tip 的方法。
+在這篇論文發布後，也有其他人也研究以 DAG 為基礎的分散式帳本，如~\cite{SZ_SPECTRE}。
+我們也提及了另一種~\cite{bitcoinj,lightning} 針對基於 P2P 的比特幣小額支付的解決方案。
 
-
-
-\section{Weights and more}
+\section{權重及相關概念}
 \label{s_weight_algo}
-% Here, we define the (own) 
-In this section we define the weight of a transaction, 
-and related concepts. The weight of a transaction is 
-proportional to the amount of work that the issuing node invested 
-into it. In 
-%practice (meaning ``in current iota's implementation''), 
-the current implementation of iota,
-the weight may only assume values $3^n$, 
-where~$n$ is a positive integer that belongs to 
-some nonempty interval of acceptable values\footnote{This
-interval should also be finite --- see the ``large weight 
-attack'' in Section~\ref{s_attacks}.}.
-In fact,
-% mostly, here for us 
-it is irrelevant to know how the weight
-was obtained in practice. 
-It is only important that every transaction
-has a positive integer, its weight,
-% ($=$ weight) 
-attached to it. 
- In general, the idea is that a transaction with a
- larger weight is more ``important'' than a transaction
- with a smaller weight.
- % the larger the weight is, the 
-% more ``important'' the transaction is for the tangle.
-% Usually it is assumed that,
- To avoid spamming and 
- % different kinds of attacks,
- other attack styles, it is assumed that
- no entity can generate
-% too many 
-an abundance of transactions with ``acceptable'' weights
- in a short period of time.
+本節我們定義一個交易的自身權重及其相關概念。交易的權重與發送這筆交易的節點所投入的工作量成正比；
+在目前 iota 的實作中，權重可以假定為 $3^n$ 的一些數值，其中 $n$ 屬於有限區間內的正整數\footnote{這個區間應為有限的 --- 
+參照第~\ref{s_attacks} 節中的「大權重攻擊」}。
+事實上，這與權重是如何增加的並不相干; 重要的是，每一筆交易都有一個正整數的權重。
+總之，權重愈高該筆交易在 tangle 中也就愈「重要」。
+為了避免各式攻擊，我們假設沒有任何角色 (entity) 可以在短時間內產生大量的「可接受」權重的交易。
+ 
+我們所需要的一個重要概念就是一個交易的\emph{累積權重}：
+它被定義為這個交易的自身權重與其他直接以及間接驗證這個交易的所有交易的自身權重之和。
+累積權重的計算方法如圖~\ref{f_weights} 所示。其中方框代表交易，方框右下角較小的數字表示這個交易的自身權重，
+而字體加粗的數字是這筆交易的累積權重。例如，交易~$F$ 經交易 $A,B,C,E$  直接或者間接被驗證。
+交易~$F$ 的累積權重就是交易 $A,B,C,E$ 的各自自身權重之和，即 $9=3+1+3+1+1$。
 
-One of the notions we need is the \emph{cumulative weight}
-of a transaction:
-it is defined as the own weight of a particular transaction plus
-the sum of own weights of all transactions that directly or indirectly approve
-this transaction.
-The algorithm for cumulative weight calculation is illustrated in 
-Figure~\ref{f_weights}. The boxes represent transactions,
-the small number in the SE corner of each box denotes own weight, and the 
-% (bigger) 
-bold number denotes
-the cumulative weight. For example, transaction~$F$
-is directly or indirectly approved
-% , directly or indirectly, 
-by transactions
-$A,B,C,E$. The cumulative weight of~$F$ is
-$9=3+1+3+1+1$, which is the sum of the own weight of~$F$ and the 
-own weights of $A,B,C,E$.
-
- Let us define ``tips'' as unapproved transactions 
- in the tangle graph.
- In the top 
- %picture
- tangle snapshot of 
-Figure~\ref{f_weights}, the only 
-% unapproved transactions (the ``tips'') 
-tips are~$A$ and~$C$.
-When the new transaction~$X$ 
-% comes 
-arrives and approves~$A$ and~$C$ in the bottom 
-tangle snapshot,~$X$ becomes the only tip.
- The cumulative weight of all other transactions
-increases by~$3$, the own weight of~$X$.
-%(which is the weight of~$X$).
-
+在圖~\ref{f_weights} 中沒有被驗證的交易(即 “tips”)只有交易~$A$ 和交易~$C$。
+若一個新的交易~$X$ 進入系統並且驗證交易~$A$ 和~$C$，那麼交易~$X$ 就是系統中唯一的 tip 了，
+同時系統中其他所有的交易的權重增加 3（即交易~$X$ 的自身權重）。
+為了討論驗證演算法，我們需要引入一些其他的變數。
 
 \begin{figure}
  \centering \includegraphics[width=0.64\textwidth]{weights} 
-\caption{DAG with weight assignments before and after
-a newly issued transaction,~$X$. The boxes represent transactions,
-the small number in the SE corner of each box denotes own weight, and the 
-bold number denotes the cumulative weight.
-%On the weights (re)calculation
-}
+\caption{新發起交易進入系統後的權重改變圖。每個方框代表交易，
+方框右下角較小的數字表示這個交易的自身權重，
+而粗體數字是每筆交易的累積權重。}
 \label{f_weights}
 \end{figure}
 
-% For the discussion of approval algorithms,
-We need 
-%also 
-to introduce two additional variables for the discussion 
-of approval algorithms.
-First, for a transaction site on the tangle, 
-we introduce its
+在討論驗證演算法前，我們須再介紹兩個名詞：
+首先，對於 tangle 中的一筆交易，它的:
 \begin{itemize}
- \item \emph{height}: the length of the longest
-oriented path to the genesis;
- \item \emph{depth}: the length of the longest
-reverse-oriented path to some tip.
+ \item \emph{高度}(height): 定義為自創世交易 (genesis) 至當前這個交易的所有路徑中最長的長度
+ \item \emph{深度}(depth): 定義為自這個交易到某個 tip 的最長路徑；
 \end{itemize}
-For example, 
-% on Figure~\ref{f_reverse_weights}, 
-$G$ has 
-height~$1$ and depth~$4$ 
-in Figure~\ref{f_reverse_weights}
-% (because of the reverse 
-% path $E,C$),
-% depth~$3$ 
-because of the reverse 
- path $F,D,B,A$, 
-while~$D$ has height~$3$ and depth~$2$.
-Also, let us introduce the notion of the \emph{score}.
-By definition, the score of a transaction
- is the sum of own weights of all transactions approved by this 
-transaction plus
- the own weight of the transaction itself.
-% (we need this only for the tips, although this definition
-% makes sense for all transactions). 
-% (again, see 
+
+例如，在圖~\ref{f_reverse_weights} 中，交易 $G$ 的高度為 1，深度為 4 (因為反向路徑 $F,D,B,A$)；
+而交易~$D$ 的高度為~$3$，深度為~$2$。
+接下來，我們引入\emph{積分} (score) 的概念。
+一筆交易的積分定義為它的自身權重與所有它驗證的那些交易的自身權重之和。
+
 \begin{figure}
  \centering \includegraphics[width=0.64\textwidth]{reverse_weights} 
 \caption{
-%On the calculation of scores (circled)
-DAG with own weights assigned to each site, 
-and scores calculated for sites~$A$ and~$C$.}
+每筆交易的自身權重，以及交易~$A$ 和~$C$ 的積分}
 \label{f_reverse_weights}
 \end{figure}
-% On the picture, 
-In Figure~\ref{f_reverse_weights},
-the only 
-tips are~$A$ and~$C$.
-Transaction~$A$ directly or indirectly approves 
-% (directly or indirectly)
-transactions $B,D,F,G$, so the score of~$A$
-is $1+3+1+3+1=9$. Analogously, the score
-of~$C$ is $1+1+1+3+1=7$.
 
-%In fact, 
-In order to understand the arguments presented in this paper,
-one may safely assume that all transactions have an own weight
- equal to~$1$.  
-\emph{From now on, we stick to this assumption}.
-% In particular
-Under this assumption, the cumulative weight of 
-transaction~$X$ becomes
-~$1$ plus the number of transactions that directly or 
-indirectly approve~$X$, and 
-% our transaction directly or indirectly. 
-the score 
-% now is 
-becomes~$1$ plus the number of transactions
-that are directly or indirectly approved by~$X$. 
-% are directly or indirectly approved by our transaction.
+在圖~\ref{f_reverse_weights} 中，僅有的 tips 有交易~$A$ 和~$C$。
+交易~$A$ 直接或者間接地驗證了交易 $B,D,F,G$，因此交易~$A$ 的積分為 $1+3+1+3+1 = 9$。
+同樣地，交易~$C$ 的積分為 $1+1+1+3+1 = 7$。
 
-% Also, let us observe that, among the above metrics, 
-Let us note that, among those defined 
-in this section, the cumulative weight
-is (by far!) the most important metric, although 
-% for us (although 
-height, depth, and score will 
-briefly enter some discussions as well.
+想要了解本論文的證明過程，你可以假設所有交易的權重都為 1。
+因此，\emph{從現在開始，我們會依循這個假設}。
+在這個假設底下，交易~$X$ 的累積權重就是~$1$ 加上所有直接或間接驗證~$X$ 的交易個數，
+而積分則為~$1$ 加上被~$X$ 直接或間接驗證的交易個數。
+
+接著注意到，所有代數中最重要的就是累積權重(就目前而言!)，而高度、深度以及分數待會也會列入討論。
 
 
-
-
-\section{Stability of the system, and cutsets}
+\section{系統的穩定性和截斷集合}
 \label{s_cutsets}
 
-Let $L(t)$ be the total number of tips 
-% (i.e., unreferenced transactions)
-in the system at time~$t$. One
-%, of course,
- expects that 
-the stochastic process~$L(t)$ remains \emph{stable}\footnote{Under
-an additional assumption that the process is time-homogeneous.}.
-More precisely, one expects the process to be \emph{positive recurrent}, see Sections~4.4 and~6.5
-of~\cite{Ross_m} for formal definitions. 
-In particular, positive recurrence implies that the limit of 
-$\IP[L(t)=k]$ as $t\to \infty$ should
-exist and be positive for all $k\geq 1$. 
-Intuitively, we expect that $L(t)$ should fluctuate 
-around a constant value, and not escape to infinity.
-% (thus leaving a lot of unapproved transactions behind).
-If $L(t)$ were to escape to infinity, many unapproved transactions
-would be left behind.
+記 $L(t)$ 為 $t$ 時刻系統中 tips 的總數。
+當然，大家預期隨機變數 $L(t)$ 保持\emph{穩定}\footnote{在整個發展過程與時間皆同步的假設下}，
+更精確地來說，我們期望是\emph{正遞迴} (positive recurrent) 的; 
+正式的定義可以參照第~4.4 節以及~\cite{Ross_m} 的~6.5 節處; 
+正遞迴指的是當 $t\to\infty$，$\mathbb{P}\big[L(t)=k\big]$ 的極限應存在且為正值 $\forall k\geq 1$ ）。
+直觀上， $L(t)$ 應當圍繞一個恆定的常數波動，而不是趨於無限大。
+如果 $L(t)$ 趨近於無限大，這樣的話系統中會存在大量未經驗證的交易。
 
-To analyze the stability properties of~$L(t)$, we need 
-to make some 
-assumptions. 
-One 
-% of them
-assumption is that
-transactions are issued by a large number
-of roughly independent entities, so the process of incoming
-transactions can be modeled by a Poisson point process
-(cf.\ e.g.\ Section~5.3 of~\cite{Ross_m}).
-Let~$\lambda$ be the rate of that Poisson process.
- For simplicity, let us assume 
- %for now 
- that 
-this rate remains constant in time. 
-Assume that all devices have approximately 
-the same computing power, and let~$h$ be the average
-time a device needs to perform calculations
-that are required to issue a transaction.
-% in the case where there are~$L$
-% tips and the total number of transactions is~$N$. 
-Then, let us \emph{assume} that all nodes
-behave in the following way:
- to issue a transaction, a node 
- %just
-  chooses
-two tips at random and approves them. 
-It should be observed that, in general, it is \emph{not}
-a good idea for the ``honest nodes'' to adopt
-this strategy because it has a number of practical
-disadvantages. In particular, it does not offer enough
-protection against ``lazy'' or malicious nodes
-%\footnote{We 
-%remind the reader that we do not try to \emph{enforce}
-%any particular tip selection strategy. 
-%An attacker can choose tips in any way they find convenient.} 
-(see Section~\ref{s_parasite} below). On the other hand,
-we still consider this model since it is simple to analyze,
-and 
-% therefore one may get 
-may provide insight into the system's behavior
-for more complicated tip selection strategies.
-% For this simple strategy, one may assume that the Poisson flows
-% of approvals to 
-% %different 
-% each tip are independent, and have
-% rate $2\lambda/L$. This follows from
-% Proposition~5.3 of~\cite{Ross_m}, which says 
-% that if we independently classify each event of a Poisson process
-% according to a list of possible subtypes,
-% then the processes of events of each subtype 
-% are independent Poisson processes.
+為了分析 $L(t)$ 的穩定性，我們需要一些前提假設。
+其中一個就是，當有一個獨立的節點產生了一個大權重的交易，
+因此新進交易的整個過程可以以帕松分佈為模型(cf.\ e.g.\ ~\cite{Ross_m} 的~5.3 節)。
+假設 $\lambda$ 為帕松過程 (Poisson process) 的交易輸入流的速率；為簡單起見，我們假定交易輸入流的速率隨著時間仍保持恆定。
+假設所有的設備都具有相近的計算能力，一台設備要發送一筆交易所需要計算的平均時間為 $h$。
+我們\emph{假定}所有節點都符合以下模式:
+ 
+即在要發送一筆交易的時候，節點從 tips 中隨機選擇兩個並驗證它們。
+須注意到的是，對「誠實的節點」而言，採用此方法並\emph{不是}一個好主意。
+有幾個缺點，它並不能有效的抵制「懶惰的節點」和惡意的節點(參照第~\ref{s_parasite} 節)。
+但我們仍把這個方法納入討論，因為其較容易分析，而且讀者也接著會一窺較複雜的 tip 選擇演算法。
 
-Next, we make a further simplifying assumption that any node,
-at the moment when it issues a transaction, observes not the 
-actual state of the tangle, but the one exactly~$h$ time units
-ago. This means, in particular, that a transaction
-attached to the tangle at time~$t$ only becomes 
-visible to the network at time~$t+h$. We also assume 
-that the number of tips remains roughly stationary
-in time, and is concentrated around a number~$L_0>0$.
-In the following, we will calculate~$L_0$ as
-a function of~$\lambda$ and~$h$. 
+接下來我們做進一步的簡化，當一個節點發起交易時，它並非是 tangle 真正的樣貌，而是~$h$ 個時間單位以前的狀態。
+這代表通常一個交易在時間~$t$ 接上 tangle 後，要到時間~$t+h$ 才會在 tangle 上看見。
+我們也假定 tips 的總數保持在幾乎靜值，數字大概落在 $L_0>0$ 上下，在接下來我們會計算由 $\lambda$ 與 $h$ 推導的 $L_0$ 函數。
 
-Observe that,
-at a given time~$t$ we have roughly $\lambda h$ ``hidden tips'' 
-(which were attached in the time interval $[t-h,t)$ 
- and so are not yet visible to the network);
-also, assume that typically there are~$r$ ``revealed tips'' 
- (which were attached before time $t-h$), 
-so $L_0 = r+ \lambda h$. 
-By stationarity, we may then assume that at time~$t$ there 
-are also around~$\lambda h$ sites that were tips at time~$t-h$, 
- but are not tips anymore. 
-Now, think about a new transaction that comes at this moment;
-then, a transaction it chooses to approve is a tip 
-with probability $r/(r+\lambda h)$ (since there are around~$r$
-tips known to the node that issued the transaction,
-and there are also around~$\lambda h$ transactions which are not 
-tips anymore, although that node thinks they are), 
-so the mean number of chosen tips is $2r/(r+\lambda h)$. 
-The key observation is now that, in the stationary regime,
-this mean number of chosen tips should be equal to~$1$,
-since, in average, a newcoming transaction should not change
-the number of tips.
-Solving the equation $2r/(r+\lambda h)=1$ with respect to~$r$, 
-we obtain $r=\lambda h$, and so 
+我們發現，在一個給定的時間 $t$，我們有約 $\lambda h$ 的「隱藏的 tip」(這些 tips 是在時段 $[t-h,t)$ 接在 tangle 上，
+所以它們尚未能在 tangle 上看到)；接著我們假設有 $r$ 個「顯現的 tips」(在~$t-h$ 之前接上 tangle 的 tips)，
+所以得出 $L_0=r+\lambda h$。由於 tips 的總數是穩定的，我們或許可假設有 $\lambda h$ 個交易在~$t-h$ 的時候為 tips 而在時間 t 時已不是了。
+現在考慮一個全新的交易被引進的情況；則這個交易會驗證到 tips 的機率為 $r/(r+\lambda h)$
+(因為這裡有 r 個 tips，而這裡也有 $\lambda h$ 個不是 tips 但節點誤以為是)，所以選擇到 tips 的期望值是 $2r/(r+\lambda h)$。
+我們可以發現一個重要的現象，在穩定的狀態中，選擇到 tips 的期望值為 $1$，因為就平均而言，一個新進的交易並不會改變 tips 的總數。
+解 $2r/(r+\lambda h)$，可以得到 $r=\lambda h$，以及
+ 
 \begin{equation}
 \label{L0_def} 
 L_0 = 2\lambda h.
 \end{equation}
 
-We also note that,
-if the rule is that a new transaction references~$k$ 
-transactions instead of 2, then a similar calculation gives
+我們在這裡註記，如果今天規則改成一個交易會去驗證~$k$ 個交易，而非兩個，則我們有類似的計算:
 \begin{equation}
 \label{L0k_def} 
  L_0^{(k)} = \frac{k\lambda h}{k-1}.
 \end{equation}
-This is, of course, consistent with the fact that~$L_0^{(k)}$ 
-should tend to $\lambda h$ as $k\to\infty$ (basically, the 
-only tips would be those still unknown to the network).
+理所當然的，$L^{(k)}_0$ 會趨近於 $\lambda h$ 當 $t$ 趨近無限大(基本上，剩下的 tips 會是那些網路上尚未可見到的)
 
+我們回去考慮會有兩個交易會被驗證的情況，一個交易第一次被驗證時間預計約為 $h+L_0/(2\lambda)=2h$。
+因為根據我們的假設，在第一個~$h$ 個單位時間之前，交易是不會被驗證的。
+接下來驗證此交易的帕松過程的速率為 $(2\lambda)/L_0$ (可參考~\cite{Ross_m} 的~5.3，
+說明了當我們以不同類別獨立分類每個帕松過程，那麼各個類別的帕松過程是相互獨立的)。
 
+同時，注意到\footnote{至少在交易節點\emph{試圖}驗證 tips 的情況下} 對任意固定 $t$ 時刻， 
+在某一個階段 $s\in\big[t,t+h(L_0,N)\big]$ 內那些 tips 構成了一個\emph{截斷集合}(cutset)，
+在時間 $t'> t$ 時發起的交易到創世交易的任何路徑都必須通過這個集合。
+很重要的是，在某些情況下這個會截斷集合變得非常小。
+我們也許可以使用這個較小的截斷集合作為檢查點，作為 DAG 可能的剪枝或者其他用途。 
 
-%  Therefore,
-% \begin{equation}
-% \label{prob_appr_tip}
-%  \IP[\text{nobody approves a given tip during time }h(L,N)]
-% = \exp\Big(-\frac{2\lambda h(L,N)}{L}\Big).
-% \end{equation}
-% This means that the expected increment of the total number
-% of tips at the moment when our device issues a
-% transaction is equal to
-% \begin{equation}
-% \label{eq_drift}
-%  1-2\exp\Big(-\frac{2\lambda h(L,N)}{L}\Big).
-% \end{equation}
-% In the above formula, ``$1$'' corresponds to the new tip created
-% by the transaction, and the second term corresponds to the expected
-% number of ``erased'' tips.
-% % Indeed, a
-% According to~\eqref{prob_appr_tip},
-% %(and assuming also that the node always chooses two 
-% %\emph{distinct} tips to approve in the event when there
-% %are at least two available tips)
-%  each tip\footnote{Assuming that the node always chooses two 
-% \emph{distinct} tips to approve if there
-% are at least two tips available.} that is initially
-% chosen for approval will still remain a tip
-%  at the moment when the transaction is issued 
-% with
-% probability~$\exp\big(-\frac{2\lambda h(L,N)}{L}\big)$.
-%  Now, $L(t)$ is in fact a continuous-time
-% random walk on~$\N=\{1,2,3,\ldots\}$, with nearest-neighbor 
-% transitions. 
-% %Indeed, i
-% If the two chosen transactions were already
-% approved, then the process jumps one unit to the right.
-% If both chosen transactions were not previously approved, 
-% then the process jumps one unit to the left.
-%  %and i
-%  In the last possible 
-% case, the process remains still. 
-% 
-% %Now, t
-% To understand the typical behavior of the process,
-% observe that the drift\footnote{The expectation
-% of the increment of the number of tips.} 
-% %(i.e., the expectation
-% %of the increment of the number of tips)
-%  in~\eqref{eq_drift} is positive
-% for small~$L(t)$ and negative for 
-% large~$L$\footnote{This is true for large~$L$
-%  in the case when
-% $h(L,N)=o(L)$ as $L\to\infty$, or just assuming that 
-% the main contribution to the computation or propagation
-% time does not come from handling the tips.}. 
-% In other words, if~$L(t)$ is small, then the drift has a tendency to
-% increase, while if~$L(t)$ is large, the drift has a
-% tendency to decrease.
-% Therefore, the  ``typical'' 
-% value,~$L_0$, of~$L(t)$  
-% %be where
-% occurs when~\eqref{eq_drift} 
-% vanishes so that the number of tips has no 
-% clear tendency to increase or decrease. That is, 
-% \begin{equation}
-% \label{L0_def}
-%  L_0 \approx \frac{2\lambda h(L_0,N)}{\ln 2} 
-% \approx 2.89\cdot\lambda h(L_0,N).
-% \end{equation}
+上述「純隨機」策略實際上並不太好，因為這種策略不會鼓勵節點驗證交易：
+比如「懶惰」的用戶也許總是去驗證較早的幾筆固定交易，因此就沒有貢獻到較新交易的驗證，而這種行為也不會受到懲罰。\footnote{
+提醒讀者，我們並非嘗試 \emph{強迫推行} 任何一種 tips 選擇方式。攻擊者能以任何它覺得便利的方式選擇 tips。)}
+惡意的節點也可以產生大量交易驗證幾組固定交易達到人工製造大量 tips，讓未來的新交易能有極高機率選擇這些 tips，
+而有效的捨棄「誠實」節點的 tips。
+為了避免這個行為，我們得採用另一種方法，讓新進交易偏向選擇「好」的 tips。
+在~\ref{s_parasite} 節有一個此種策略的例子。\footnote{作者認為，以 tangle 為基礎的加密貨幣中最重要的元素是 tip 驗證的方法，
+因為攻擊的途徑就隱含於其中。此外，既然通常不會強制以什麼方法驗證 tip，則必定存在一個讓節點自願依循某個常見方法的理由。
+一個可能的原因是節點知道有相當多的其他節點都遵照同一個 tip 的驗證方法。}
 
-% It is clear that $L_0$, defined above, is the typical size of
-% the tip set. 
-Also (we return to the case of two transactions to approve) 
-the expected time for a transaction to be 
-approved for the first time is approximately $h+L_0/2\lambda=2h$.
-This is because, by our assumption, during the first~$h$
-units of time a transaction cannot be approved, and after
-that the Poisson flow
-of approvals to it has rate approximately $2\lambda/L_0$. 
-(Recall Proposition~5.3 of~\cite{Ross_m}, which says 
-that if we independently classify each event of a Poisson process
-according to a list of possible subtypes,
-then the processes of events of each subtype 
-are independent Poisson processes.)
+在討論交易第一次被驗證所需時間的期望值前，我們分兩個區間進行分析，(圖~\ref{f_regimes})。
 
-Observe that\footnote{At least in the case where the nodes
-\emph{try} to approve tips.} at any fixed time~$t$ the set 
-of transactions that were tips
-at some moment~$s\in[t,t+h(L_0,N)]$ typically
-constitutes a \emph{cutset}. 
-% in the sense that 
-Any path from 
-a transaction issued at time~$t'>t$ to the genesis must pass
-through this set. It is important that the size of 
-a new cutset in the tangle occasionally becomes small. 
-%the cutsets 
-%at least occasionally; 
-One may then 
-use the small cutsets as checkpoints for possible DAG pruning
-and other tasks.
-
-% Now, the above ``purely random'' strategy is not 
-% very good in practice, 
-% because it does not encourage approving tips:
-% a ``lazy'' user could just always approve a fixed couple 
-% of very old transactions 
-% (and therefore not contributing to approval 
-% of more recent transactions)
-% without being punished for such behavior\footnote{we 
-% remind the reader that we do not try to \emph{enforce}
-% any particular tip selection strategy, so an 
-% attacker can choose tips in any way he/she finds convenient}.
-% To discourage the behavior of this sort, one has to adopt a
-% strategy which is biased towards the tips with higher score.
-
-It is important to observe
-%, however,
- that 
-the above ``purely random'' approval 
-strategy is not very good in practice 
-because it does not encourage approving tips.
-A ``lazy'' user could 
-%just
-always approve a fixed 
-%couple 
-pair
-of very old transactions, therefore not contributing to the approval of 
-more recent transactions,
-without being punished for such behavior\footnote{We 
-remind the reader that we do not try to \emph{enforce}
-any particular tip selection strategy. An 
-attacker can choose tips in any way they find convenient.}.
-Also, a malicious entity can artificially inflate the number
-of tips 
-%(e.g., 
-by issuing many transactions that approve
-a fixed pair of transactions. 
-%in order to 
-This would make it possible for future transactions to
-select these tips with very high probability, effectively
- abandoning the tips belonging to ``honest'' nodes.
-To avoid issues of this sort, one has to adopt a
-strategy that is biased towards the ``better'' tips.
-One example of such a strategy is presented in Section~\ref{s_parasite}
-below\footnote{The author's feeling is that the tip approval 
-strategy is \emph{the} most important ingredient for 
-constructing a tangle-based cryptocurrency because 
-%It is there that many
-attack vectors are hiding in this element of the system.
- Also, since there are usually no ways to 
-enforce a particular tip approval strategy, there must be a 
-good reason for nodes to voluntarily choose to follow a common 
-strategy. A possible reason is knowing that a good portion of other 
-nodes are following the same tip approval strategy. 
-%that strategy must 
-%be such that the nodes would voluntarily choose to follow it
-%knowing that at least a good proportion of other nodes does so.
-}.
-
-
-% An example of such a strategy can be the following. 
-% Fix a parameter $\alpha\in(0,1)$; 
-% then, choose the two transactions to approve between
-% the top~$\alpha L$ (with respect to their score).
-% The same considerations as above imply that the typical 
-% size of the set of tips will be 
-% \begin{equation}
-% \label{L0alpha_def}
-%  L_0^{(\alpha)} \approx \frac{2\lambda h(L_0,N)}{\alpha \ln 2}
-%  \approx 2.89\cdot \alpha^{-1}\lambda h(L_0,N).
-% \end{equation}
-% As for the expected time for a transaction to be 
-% approved for the first time, the situation a bit more
-% complicated.
-Before starting the discussion about 
-the expected time for a transaction to 
-%be approved for the first time
-receive its first approval, 
-%observe 
-note that
-we can distinguish 
-%essentially 
-two regimes 
-(Figure~\ref{f_regimes}).
 \begin{itemize}
- \item Low load: the typical number of
-tips is small, and frequently becomes~$1$.
-This may happen when the flow of transactions is so small
-% enough, so
- that it is not probable that several different transactions
-approve the same tip. Also, if the network latency is very
-low and devices compute fast, it is unlikely
-that many tips would appear. This even holds true in the case when the flow
-of transactions is reasonably large. Moreover, 
-we have to assume that there are no attackers 
-that try to artificially inflate the number of tips.
- \item High load: the typical number of tips is large.
-This may happen when
-the flow of transactions is 
-%big enough, 
-large, and computational delays together with network
-latency make it likely that several different transactions
-approve the same tip.
+ \item 低負載區: tips 的數量很少，常常只有 1 個。
+ 當交易流足夠慢時會發生，不太可能發生不同的交易驗證同一個 tip 的情況。
+ 而且若網路延遲很短且設備運算的速度很快，也不大可能會有大量 tips 出現的情況。
+ 即使是在交易流的很快的情況下也是如此。此外，我們也應假設不會有攻擊者產生大量的交易以膨脹 tips 數量。
+ \item 高負載區: tips 的數量很多。當交易流很大且計算力與網路的延遲很長時便可能會讓多筆不同交易驗證到同一個 tip。
 \end{itemize}
 \begin{figure}
  \centering \includegraphics[width=0.64\textwidth]{regimes} 
-\caption{Low load (top) and high load (bottom) regimes of 
-incoming transaction flow. White squares represent verified 
-sites, while gray squares represent tips.
-%The tangle and its typical tip sets (shaded) 
-%in low load and high load
-%regimes. Observe that in the latter case some transactions
-%may have to wait a lot until approved for the first time.
-}
+\caption{新進交易的低負載 (上方) 與高負載 (下方)。白框代表合法的交易，灰框則表示 tips。}
 \label{f_regimes}
 \end{figure}
-%Of course, t
-This division is rather informal, and there is no
-clear borderline between the the two regimes. Nevertheless,
-we find that it may be instructive to consider these
-two 
-%essentially 
-different 
-%situations. 
-extremes.
 
-%In the low load regime, the situation is relatively simple:
-The situation in the low load regime is relatively simple. The first approval
- happens on an average timescale of order $\lambda^{-1}$
-since 
-% already the first (or one of the first)
-one of the first few 
-incoming transactions will approve 
-% our transaction.
-a given tip.
+這樣的分法是比較不正式，且在這兩個區間中並沒有明顯的分界線。然而，我們認為討論這兩種極端是有啟發的。
 
-Let us now consider the high load regime, 
-% that is, 
-the 
-%situation
-case where~$L_0$ is large.
-As mentioned above, one may assume that
-the Poisson flows of approvals to different tips are independent
-and have an approximate rate of~$2\lambda/L_0$. Therefore,
- the expected time for a transaction to 
- % be 
-% approved for the first time 
-receive its first approval is around $L_0/(2\lambda)\approx 1.45 h$
-% (recall
-~\eqref{L0_def}.
-% ).
+在低負載區域，這種情況就相對簡單：在 $\lambda^{-1}$ 的時間尺度上會有第一次驗證， 
+因為第一批中的一個新進交易將會驗證我們的這些 tips。
 
-% First, if the transaction did not make it into
-% the top~$\alpha L$, then this waiting time can be quite large,
-% of order $\exp(cL_0^{(\alpha)})$ (since there is a drift
-% towards $L_0^{(\alpha)}$ for smaller values of~$L$ and the size of the 
-% tip set needs to become much smaller than $L_0^{(\alpha)}$ for 
-% that transaction to be considered for approval). 
-% Therefore, a good strategy
-% for the owner of such a transaction would be to issue an additional
-% empty transaction referencing the first one, and hope that this
-% new transaction enters into the top~$\alpha L$. 
-% Also, similarly to the above, if the transaction is one
-% of the top~$\alpha L$, then with constant probability
-% it will have to wait around $L_0/\lambda$ time units to be
-% approved for the first time 
-% (observe that $\alpha L_0^{(\alpha)}=L_0$).
-% It is worth noting, 
-However, 
-it is worth noting that for more elaborate
-approval strategies\footnote{That favor 
-%the tips of the 
-``better'' quality tips in future implementations of iota.}, it may not be a good
-idea to passively wait a long time until a transaction
-is approved by the others. 
-%whatever that may mean)
-This is 
-%because 
-due to the fact that ``better'' tips will
-keep appearing and will be preferred for approval.
-Rather, in the case when a transaction is waiting 
-for approval over 
-% too long time (i.e., 
-a time interval much larger than $L_0/2\lambda$,
-a good strategy 
-%will
-would be 
-to promote this latent transaction with an additional empty 
-transaction\footnote{An empty transaction is a transaction
-that does not involve any token transfer, but still has to
-approve two other transactions. It should be noted that 
-generating an 
-empty transaction contributes 
-to the network's security.}. 
-% that is, 
-In other words, a node can issue an empty transaction that 
-approves its previous transaction together with one of the ``better'' tips to 
-increase the probability that the empty transaction receives approval.
-%so that this empty transaction has a high probability of 
-%being approved. 
-%good chance to be
-%further approved.
+現在我們來考慮高負載區域的情況，當 $L_0$ 很大的時候。
+如上面所提到的，我們可以假設驗證其他 tips 的帕松事件是相互獨立且其機率近似 $2\lambda/L_0$。
+因此，我們預期一筆交易被第一次驗證的時間約為 $L_0/(2\lambda)\approx1.45h$~\eqref{L0_def}。
 
-% Let us now consider the high load regime.
-%  First, if the transaction did not make it into
-% the top~$\alpha L$, then this waiting time can be quite large,
-% of order $\exp(cL_0^{(\alpha)})$ (since there is a drift
-% towards $L_0^{(\alpha)}$ for smaller values of~$L$ and the size of the 
-% tip set needs to become much smaller than $L_0^{(\alpha)}$ for 
-% that transaction to be considered for approval). 
-% Therefore, a good strategy
-% for the owner of such a transaction would be to issue an additional
-% empty transaction referencing the first one, and hope that this
-% new transaction enters into the top~$\alpha L$. 
-% Also, similarly to the above, if the transaction is one
-% of the top~$\alpha L$, then with constant probability
-% it will have to wait around $L_0/\lambda$ time units to be
-% approved for the first time 
-% (observe that $\alpha L_0^{(\alpha)}=L_0$).
-% However, if that did not happen, then the transaction may fall
-% below the top~$\alpha L$, and then a good strategy will be 
-% to promote it with an additional empty transaction.
-% 
-% Another easy strategy would be to pick, say,
-% five random tips (among all of them), 
-% and approve the top two between these five. Again, 
-% if your transaction was not approved during time 
-% $\Theta(L_0/\lambda)=\Theta(h(L_0,N))$,
-% it is a good idea to promote it with an additional empty transaction.
-% 
-% We also notice that the approval strategy may be further
-% modified, for example, to prevent spamming. For example,
-%  the nodes might prefer
-% tips with bigger own weight, making it more difficult
-% for the spammer to have his transactions approved. 
+值得一提的是，更好的驗證策略\footnote{在未來 iota 的實做中，會偏袒「好」的 tips}，花費大量時間等待交易被驗證並不是個好主意，
+這是因為「好」的 tips 會不斷的出現且也常被選擇驗證。
+甚至當交易在等待被驗證的時間大於 $L_0/(2\lambda)$ 時，一個好的辦法就是另外發起一個空交易\footnote{空交易就是筆沒有 token 的轉帳，
+但仍須驗證兩筆其他交易。注意到，產生空交易還是會貢獻整個網路的安全性。}。換言之，
+節點能發起一個新的空白交易選擇其他「好」的 tips 和它之前的交易驗證，這便會讓這個空白交易會有很大的機會被驗證。
 
-%Now, i
-It turns out that the approval strategies based
-on heights and scores may be vulnerable to a specific
-type of attacks, see Section~\ref{s_parasite}. We will
-discuss more elaborate strategies\footnote{In fact, 
-the author's feeling is that the tip approval 
-strategy is \emph{the} most important ingredient for 
-constructing a tangle-based cryptocurrency. It is there that many
-attack vectors are hiding. Also, since there is usually no way to 
-\emph{enforce} a particular tip approval strategy, it must 
-be such that the nodes would voluntarily choose to follow it
-knowing that at least a good proportion of other nodes does so.} 
-to defend against such attacks
-in that section. 
-%Nevertheless, 
-In the meantime, it is still worth considering
-the simple tip selection strategy where an incoming 
-transaction approves two random tips. 
-%(``approve two random tips''),
-This strategy 
-%since it 
-is the easiest to analyze, and therefore may 
-%give 
-provide some 
-insight into the qualitative and quantitative behavior of the 
-%system
-tangle.
+原本基於高度 (heights) 和積分 (scores) 的驗證策略可能會受到特定類型的攻擊，見~\ref{s_parasite} 節分析。
+我們將在那一節中討論更加詳細的策略\footnote{事實上，作者認為，以 tangle 為基礎的加密貨幣中最重要的元素是 tip 驗證的方法，
+因為很多的攻擊途徑就隱含於其中。此外，既然通常不會\emph{強制}以什麼方法驗證 tip，則必定存在一個讓節點自願依循某個常見方法的理由。
+一個可能的原因是節點知道有相當多的其他節點都遵照同一個 tip 的驗證方法。}來防止這樣的攻擊。
+同時，這種隨機驗證兩筆交易的 tip 選擇策略最簡單，但仍然是值得考慮的。這個策略的分析最簡單，
+從而可能會給出 tangle 行為方面的一些定性和定量方面的理解。
 
-\paragraph{Conclusions:}
+\paragraph{結論:}
 \begin{enumerate}
- \item We distinguish between two regimes, low load and high
-load (Figure~\ref{f_regimes}).
- \item There are only a few tips in the low load regime.
- % , usually there are not many tips (say, one or two), and a 
- A
- tip gets approved for the first
-time in $\Theta(\lambda^{-1})$ time units, where~$\lambda$ is the rate of the 
-incoming flow of transactions.
- \item In the high load regime the typical number 
-of tips depends on the tip approval strategy employed by the new 
-transaction. 
-%(i.e., how the new 
-%transaction chooses the other two transactions for approval).
- \item If a transaction uses the strategy of approving two 
- random tips, the typical number of tips is given by~\eqref{L0_def}. 
- % For the ``approve two random tips'' strategy, the 
-%typical number of tips is given by
- It can be shown 
-that this strategy is optimal with respect to the typical
-number of tips. However, it is not practical to adopt this strategy
-because it does not encourage approving tips.
-%  \item For the strategy ``approve two random tips among top
-% $\alpha L(t)$'' (which does not have the above disadvantage), the 
-% typical number of tips is given by~\eqref{L0alpha_def}.
- \item More elaborate strategies are needed to handle attacks 
- and other network issues. A family 
- %However, more elaborated strategies are needed; a family
-of such strategies 
-%will be described 
-is discussed in Section~\ref{s_parasite}.
- \item The typical time for a 
- %In the high load regime, the typical time until a
-tip to be approved is $\Theta(h)$ in the high load regime, where~$h$ 
-is the average computation/propagation time for a node. However, 
-if the first approval does not occur in the above time interval,
-it is a good idea for the issuer and/or receiver
-to promote that transaction with an additional empty transaction.
+ \item 我們區分了兩個區間，低負載和高負載區間，如圖~\ref{f_regimes} 所示。
+ \item 在低負載區，tips 不多，一個 tip 在 $\Theta(\lambda^{-1})$ 時間尺度內得到第一次驗證，
+ 其中 $\lambda$ 是進入系統內的交易流速度。
+ \item 在高負載區，tips 的典型數量取決於新進交易使用的驗證策略
+ \item 若一筆交易採用「隨機驗證兩個 tips」策略，tips 的典型數量由公式~\eqref{L0_def} 決定。
+ 可以看到這種策略在 tips 的典型數量上是理想的，但是在實際中不會選用這種策略，因為此策略不會鼓勵新的交易去驗證 tips。
+ \item 我們需要更多精巧的方法以抵擋攻擊與整體網路的問題，這類方法將在~\ref{s_parasite} 節中進行討論。
+ \item 在高負載區，一個 tip 獲得驗證所需要的時間尺度為 $\Theta(h)$，其中 $h$ 是一個節點的平均計算/廣播時間。
+ 但是，如果在上述時間間隔內沒有獲得第一個驗證，那麼額外發送一筆空白交易提高驗證速度，對於交易產生者或接收者便是一個好方法。
 \end{enumerate}
 
 
 
 
-\subsection{How fast does the cumulative weight typically grow?}
+\subsection{累積權重的增長有多快？}
 \label{s_cum_grow}
 
-Assume that the network is in the low load regime. 
-% Clearly, in the low load regime,
-After a transaction gets approved several times, 
-its cumulative weight will grow 
-with speed~$\lambda$ 
-%since essentially
-because all new transactions
-will indirectly reference this 
-transaction\footnote{Recall that we assumed that
-the own weights of all transactions are equal to~$1$,
-so the cumulative weight is just the number of transactions
-that directly or indirectly reference a transaction
-plus~$1$.}.
+假設網路是在低負載區，在交易被驗證幾次後，它的累積權重將以 $\lambda$ 的速度增加，因為所有新的交易都將間接指向這筆交易\footnote{
+回顧之前我們假設所有交易的自身權重皆為~$1$，因此其累積權重就會是直接或間接指向這此交易的交易數目加~$1$。}。
 
-In the case where the network is in the high load regime, an 
-old transaction with a large cumulative weight will experience 
-weight growth 
-%As for the high load regime,
-% if a transaction is old enough
-%and with big cumulative weight, then the cumulative weight grows
-with speed~$\lambda$ 
-because essentially 
-all new transactions will indirectly reference it.
-%for the same reasons.
-Moreover, when the transaction is first added to the tangle it may have 
-to wait for some time to be approved. In this time interval, the 
-transaction's cumulative weight behaves in a random fashion.
-% Also, we know
-%that in the beginning the transaction may have to wait 
-%for some time
-%to be approved, and it is clear that its cumulative weight
-%behaves in a random fashion at that time.  
-% However, observe that during
-% a time interval of length~$h(L_0,N)$, in average, a tip 
-% will receive $\lambda h(L_0,N)/L_0 \approx \ln 2$ ???
-To characterize the speed with which the cumulative weight 
-grows after the 
-%see how fast the cumulative weight grows after the 
-transaction receives several approvals, let us define~$H(t)$
-%denote (for simplicity, we start counting time 
-%at the moment when our transaction has been created) by
- as the expected cumulative weight at time~$t$ 
-(for simplicity, 
-we start counting time at the moment when
- our transaction was revealed to the network, i.e.,
-$h$ time units after it was created)
- and~$K(t)$ as the expected number of
- tips that approve the transaction at time~$t$.
-%(or simply ``our tips'')
-Let us also abbreviate $h:=h(L_0,N)$. 
-We make a simplifying
-assumption that the number of tips remains roughly
-constant at a value of~$L_0$ over time. 
-%(equal to~$L_0$) in time. 
-We work with the ``approve two random tips'' strategy in this section. 
-It is expected that the qualitative behavior will be roughly the same for 
-other reasonable strategies. 
+而若在高負載區，具有較大的累積權重的舊交易，其累積權重同樣會以 $\lambda$ 的速度增加，因為基本上新進的交易都會間接的指向它。
+此外，當交易剛進入 tangle 時需要等待一定的時間被驗證，而在這段時間內，其累積權重會以較為無規的形式增長。
+為了弄明白一個交易在得到幾個驗證之後其累積權重的變化行為，
+我們記 $H(t)$ 為 $t$ 時刻該交易的累積權重期望值，(為簡單起見，我們自發起交易開始計時，也就是在發起交易的 $h$ 時間單位後)
+並用 $K(t)$ 表示在 $t$ 時刻驗證我們的這筆交易的 tips 數量的期望值。在此，我們簡記為 $h:=h(L_0,N)$。
+同時，我們做一個簡化假設，認為 tips 的總數大體保持恒定不變，其值約為 $L_0$。本節我們採用「隨機驗證兩個 tips」的策略；
+可預期其結果大致上與其他合理的策略的結果相同。
 
-Recall that a transaction 
-%coming to the system 
-entering the network at time~$t$ typically 
-chooses two 
-%transactions 
-tips to approve based on the state
-of the system at time~$t-h$ because the node must do
-some calculations and verifications before actually issuing the 
-transaction. 
-% Let us make a further simplifying
-% assumption that~$h(L_0,N)$ is much less than~$L_0$; essentially
-It is not difficult to see that
-(assuming, though, that $K(\cdot)$ is the \emph{actual}
-number of tips, not just expected number)
-%obtain that 
-the probability of the transaction approving at least one of ``our'' tips
- in the tangle is
-%that it approves at least one``our'' tip is 
-$1-\big(1-\frac{K(t-h)}{L_0}\big)^2
-=\frac{K(t-h)}{L_0}\big(2-\frac{K(t-h)}{L_0}\big)$\footnote{The expression on the left-hand
- side is~$1$ minus the probability that the two approved tips are not ours.}.
-% (indeed, the two approved tips are ours with probability
-% $\big(\frac{K(t-h)}{L_0}\big)^2$, ). 
-Analogous to Example~6.4 of~\cite{Ross_m},
-we can write for small $\delta>0$
+在 $t$ 時刻進入網路中的一筆交易通常是基於 $t-h$ 時刻時網路的狀態，來選擇兩筆交易進行驗證，因為節點在真正發起交易前必須進行一些運算和驗證。
+不難得到(假設，$K(\cdot)$ 是 \emph{真實的} tips 個數, 而非期望值)一筆交易至少驗證一個「我們的」 tip 的機率是 
+$1-\big(1-\dfrac{K(t-h)}{L_0}\big)^2=\dfrac{K(t-h)}{L_0}\big(2-\dfrac{K(t-h)}{L_0}\big)$\footnote{
+等號左手邊的 1 減掉 2 個不是我們的 tips 被驗證的機率}。
+因此我們可以寫下如下的微分方程 (類似於文獻~\cite{Ross_m}中的例子 6.4):
+
+我們可以得知 $\delta>0$
 \[
  H(t+\delta) = H(t) 
 + \lambda \delta\frac{K(t-h)}{L_0}\Big(2-\frac{K(t-h)}{L_0}\Big)
  + o(\delta),
 \]
-and thus deduce the following differential equation
+我們可以化簡式子為︰
 \begin{equation}
 \label{diff_H}
  \frac{d H(t)}{dt} = \lambda \frac{K(t-h)}{L_0}\Big(2-\frac{K(t-h)}{L_0}\Big).
 \end{equation}
-In order to be able to use~\eqref{diff_H}, we need to first 
-calculate~$K(t)$.
-This is not a trivial task since a tip at time~$t-h$ 
-may not be a tip at time~$t$, 
-and the overall number of tips approving the original transaction 
-increases by 1 in the case where an incoming transaction 
-approves such a tip.
-%It is not immediately clear how to do this, since a tip 
-%at time~$t-h$ may not be a tip at time~$t$, and, 
-%in the case when the newly coming transaction approves
-%such a tip, the overall number of tips approving the original
-%transaction increases by~$1$. 
-The crucial observation
-is that the probability that a tip at time~$t-h$ remains a tip
-at time~$t$ is approximately~$1/2$. 
-(To verify this, recall the discussion from 
-Section~\ref{s_cutsets}: the typical number of tips
-is $2\lambda h$, and during the interval of length~$h$
-new~$\lambda h$ tips will substitute a half of old ones.)
-% plug the expression
-%  in~\eqref{L0_def} into~\eqref{prob_appr_tip}.
- Therefore, at time~$t$ approximately one half~$K(t-h)$ 
-%``previous'' our 
-tips remain in the unconfirmed tip state, while the other half
-will have received at least one approval. 
-%be already approved at least once. 
-Let~$A$ denote
-%by~$A$ 
-the set of  
-%(approximately) 
-$K(t-h)/2$ tips at time~$t-h$
-that are still tips at time~$t$, and let~$B$ denote the remaining 
-set of $K(t-h)/2$ tips that were already approved by time~$t$.
-% will be denoted by~$B$. 
-Let~$p_1$ be the probability that a new transaction
-%the newly arrived transaction 
-approves at least~$1$ transaction from~$B$
-and does not approve any transactions from~$A$. Furthermore,
-let~$p_2$ be the probability that both approved transactions
-belong to~$A$. In other words, $p_1$ and~$p_2$ are
-the probabilities that the current number of ``our'' tips
-increases or decreases by~$1$ upon arrival of the new transaction. 
-We have
+為了能夠使用方程式~\eqref{diff_H}，我們首先需要計算 $K(t)$。計算 $K(t)$ 是很困難的，
+因為在 $t-h$ 時刻的一個 tip 也許在 $t$ 時刻已經不是一個 tip。並且，在新進入的交易驗證了這樣一個 tip 的情況下，
+那麼驗證原來交易的 tips 總量就會增加 1 個。現在，
+可以觀察到一個關鍵是在 $t-h$ 時刻的一個 tip 在 $t$ 時刻仍然保持為 tip 的機率為 $1/2$。
+(欲驗證此，回顧在第~\ref{s_cutsets} 節的討論: 典型的 tip 數目為 $2\lambda h$，而在~$h$ 時間後，$\lambda h$ 個新的 tips 會替換舊的一半。)
+因此，在 $t$ 時刻，有 $K(t-h)$ 的一半的「以前」的 tips 仍然保持為 tips，而另一半已經至少被一筆交易所驗證。
+
+讓我們用~$A$ 表示 $K(t-h)/2$ 個在 $t-h$ 到 $t$ 時刻仍然保持為 tips 的這些交易的集合，
+而用~$B$ 表示另外 $K(t-h)/2$ 個在 $t$ 時刻已經被驗證過的 tips 的集合。
+假定新進入的交易至少驗證了集合~$B$ 中一筆交易而沒有驗證集合~$A$ 中任何交易的機率為 $p_1$；
+接著假設同時驗證了兩筆集合~$A$ 中的交易的機率為 $p_2$ 。換言之， $p_1$ 和 $p_2$ 分別對應於在新交易到達時，
+目前「我們」的 tips 增加或者減少 1 的機率。因此，得到一些基本關係式：
+
 \begin{align*}
  p_1 &= \Big(\frac{K(t-h)}{2 L_0}\Big)^2 + 2\times
 \frac{K(t-h)}{2 L_0}\Big(1-\frac{K(t-h)}{L_0}\Big),  \\
  p_2 &= \Big(\frac{K(t-h)}{2 L_0}\Big)^2.
 \end{align*}
-To obtain the first expression, observe that~$p_1$
-equals the probability that both approved tips 
-belong to~$B$ plus twice the probability that the first
-tip belongs to~$B$ and the second tip does not 
-belong to $A\cup B$.
-Analogous to~\eqref{diff_H},
-the differential equation for $K(t)$ is:
+為了得到第一個敘述，觀察到 $p_1$ 等於都驗證~$B$ 集合的機率與第一個驗證~$B$ 集合且第二個不是 $A\cup B$ 集合的機率之和，類似方程式~\eqref{diff_H}，
+$K(t)$ 的微分方程：
 \begin{equation}
 \label{diff_K}
  \frac{d K(t)}{dt} = (p_1-p_2)\lambda = \lambda
  \frac{K(t-h)}{ L_0}\Big(1-\frac{K(t-h)}{L_0}\Big).
 \end{equation}
-It is difficult to solve~\eqref{diff_K} exactly,
-so we make further simplifying assumptions.
-First of all, we observe that after the time when~$K(t)$
-reaches level~$\eps L_0$ for a fixed~$\eps>0$, it will grow 
-very quickly to~$(1-\eps)L_0$. 
-%(indeed, the right-hand side of~\eqref{diff_K} will be bounded away from~$0$).
-Now, when~$K(t)$ is small with respect to~$L_0$, 
-we can drop the last factor in the right-hand side of~\eqref{diff_K}\footnote{It 
-would be a constant close to~$1$, so the 
-right-hand side would be equivalent to 
-$\lambda\frac{K(t-h)}{ L_0}$.}.
-% Also, substituting~$K(t-h)$ by $K(t)-h\frac{d K(t)}{dt}$,
-% we obtain a simplified version of~\eqref{diff_K}
-We obtain a simplified version of~\eqref{diff_K}
-by recalling that $\frac{\lambda h}{L_0}=\frac{1}{2}$:
+很難準確地求解方程~\eqref{diff_K}，因此我們進一步簡化假設。首先，我們可以看到，對於任意固定 $\epsilon >0$ ,
+在當 $K(t)$ 達到 $\epsilon L_0$ 水準之後，它將會迅速增長到 $(1-\epsilon)L_0$ 。
+現在，當 $K(t)$ 相對於 $L_0$ 非常小的時候，我們可以捨棄掉方程~\eqref{diff_K}\footnote{得到一個接近~$1$ 的常數，因此等號右邊會等於
+$\lambda\frac{K(t-h)}{ L_0}$。} 右邊最後一項。
+藉由 $\dfrac{\lambda h}{L_0}=\dfrac{1}{2}$ ，我們可以得到方程~\eqref{diff_K} 的簡化版:
 \begin{equation}
 \label{diff_K_simpl}
  \frac{d K(t)}{dt} \approx \frac{1}{2h}K(t-h),
-%\approx 0.74\cdot \frac{\lambda K(t)}{ L_0},
 \end{equation}
-with boundary condition $K(0)=1$. 
-We look for a solution of the form $K(t)=\exp(c\frac{t}{h})$;
-after substituting this into~\eqref{diff_K_simpl},
-we obtain
+其中邊界條件為 $K(0)=1$。我們打算尋找 $K(t)=\exp(c\dfrac{t}{h})$ 形式的解；帶入~\eqref{diff_K_simpl} 之後，我們得到:
 \[
  \frac{c}{h}\exp\Big(c\frac{t}{h}\Big) 
    \approx \frac{1}{2h}\exp\Big(c\frac{t}{h}-c\Big),
 \]
-therefore 
+因此 
 \begin{equation}
 \label{eq_K_simpl}
 K(t)=\exp\Big(W\big({\textstyle\frac{1}{2}}\big)\frac{t}{h}\Big)
     \approx \exp\Big(0.352\frac{t}{h}\Big)
 \end{equation}
-is an approximate solution, where~$W(\cdot)$ is the so-called
-Lambert $W$-function.\footnote{Also known as
- the omega function or product logarithm; for~$x\in [0,+\infty)$
-it is characterized by the relation $x=W(x)\exp(W(x))$.}
-% The 
-% (approximate) solution of this differential
-% equation is
-% \begin{equation}
-% \label{eq_K_simpl}
-%  K(t) \approx \exp\Big(\frac{t\ln 2}{(2+\ln 2)h}\Big)
-% \approx \exp\Big(0.26\frac{t}{h}\Big).
-% \end{equation}
-Taking the logarithm of both sides in~\eqref{eq_K_simpl}, we find that
-the time when~$K(t)$ reaches $\eps L_0$ is roughly
+這是一個近似解，這裡的~$W(\cdot)$ 是所謂的 Lambert $W$-function。\footnote{也稱為 omega function 或 product logarithm; 
+在~$x\in [0,+\infty)$，由 $x=W(x)\exp(W(x))$ 這個關係式的特性。}
+同時對式~\eqref{eq_K_simpl} 左右兩邊取對數，我們可以得到~$K(t)$ 達到 $\epsilon L_0$ 所需要的時間大約為:
 \begin{equation}
  \label{eq_t0}
  t_0 \approx \frac{h}{W\big({\textstyle\frac{1}{2}}\big)} 
 \times \big(\ln L_0 - \ln \eps^{-1}\big)
 \lesssim 2.84 \cdot h  \ln L_0.
 \end{equation}
-%Turning back
-Returning to~\eqref{diff_H} and 
-dropping the last term on the right-hand side, we
-obtain that during the ``adaptation period'' (i.e., $t\leq t_0$
-with~$t_0$ as in~\eqref{eq_t0}), it holds that
+再回到方程~\eqref{diff_H}，並且如前面一樣捨棄掉右邊最後一項），我們可以得到在 「調整階段」
+(例如，在 $t\leq t_0$ 的時候， $t_0$ 為~\eqref{eq_t0} 式的結果) 具有如下方程：
 \begin{align*}
  \frac{d H(t)}{dt} &\approx \frac{2\lambda}
 {L_0}K(t-h)
@@ -1327,7 +403,7 @@ with~$t_0$ as in~\eqref{eq_t0}), it holds that
 &= \frac{2W\big({\textstyle\frac{1}{2}}\big)}{h}
 \exp\Big(W\big({\textstyle\frac{1}{2}}\big)\frac{t}{h}\Big)
 \end{align*}
-and therefore
+因此，
 \begin{equation}
 \label{eq_H}
  H(t)\approx 
@@ -1335,294 +411,123 @@ and therefore
 \approx 2\exp\Big(0.352\frac{t}{h}\Big).
 \end{equation}
 
-Let us also remind the reader that
-% , as discussed above,
- after the adaptation period,
-the cumulative weight~$H(t)$ grows linearly
-with speed~$\lambda $. We stress that the ``exponential
-growth'' in~\eqref{eq_H} does not mean that 
-the cumulative weight grows ``very quickly'' 
-during the adaptation period. Rather, the behavior
-is as depicted in Figure~\ref{f_adapt_period}.
+在此提醒讀者，在調整階段之後，累積權重 $H(t)$ 會隨著速度 $\lambda$ 線性增長。
+我們需要強調的是在~\eqref{eq_H} 式中的「指數增長」並不意味著在調整階段累積權重增長「十分的迅速」，圖~\ref{f_adapt_period} 中描述了其行為。
 \begin{figure}
  \centering \includegraphics[width=0.64\textwidth]{adapt_period_1} 
-\caption{Plot of cumulative weight vs. time for the high load regime.
-%On the cumulative weight growth
-}
+\caption{累積權重 v.s. 高負載區的時間}
 \label{f_adapt_period}
 \end{figure}
 
-% Also, we comment that the calculations in this section 
-% can be easily adapted to the situation when a node
-% references~$s>1$ transactions \emph{in average}. 
-% For this, one just need to replace~$2$ by~$s$ in~\eqref{eq_drift}
-% (but not in~\eqref{diff_H}!), and $2$ by~$s$ as well as 
-% $\ln 2$ by~$\ln s$ in~\eqref{L0_def}
-% % --\eqref{L0alpha_def}
-% and in \eqref{diff_K_simpl}--\eqref{eq_H}.
-
 \goodbreak
 
-\paragraph{Conclusions:}
+\paragraph{結論}
 \begin{enumerate}
- \item After a transaction gets approved multiple times 
- in the low load regime, 
-its cumulative weight will grow 
-with speed~$\lambda w$, where~$w$ is the mean weight
-of a generic transaction.
- \item In the high load regime, there are two distinct growth 
- phases. First, a transaction's 
-% again,after our transaction gets approved several of times,
-%first its 
-cumulative weight~$H(t)$ grows with increasing
-speed during the \emph{adaptation period}
-according to~\eqref{eq_H}. After
-the adaptation period is over, the cumulative weight grows 
-with speed~$\lambda w$ (Figure~\ref{f_adapt_period}).
-In fact, for \emph{any} reasonable strategy the cumulative
-weight will grow with this speed after the end
-of the adaptation period because 
-%essentially all newly 
-all incoming transactions will indirectly approve  
-%our transaction.
-the transaction of interest.
- \item One can think of the adaptation period of a 
- transaction as the time until most of the current tips indirectly
-approve that transaction. The typical length of the 
-adaptation period is given by~\eqref{eq_t0}.
+ \item 在低負載區中，一筆交易被驗證過多次以後，其累積權重會以~$\lambda w$ 的速度增加，其中~$w$ 是一般交易的平均數。
+ \item 在高負載區中，會有兩種不同的狀態。其一，根據方程~\eqref{eq_H}，一個交易在\emph{調整階段} 的累積權重~$H(t)$ 會以飛快的速度增加。
+ 在調整階段結束後，累積權重的增長速度為~$\lambda w$ (圖~\ref{f_adapt_period})。事實上，對於\emph{任何}合理的策略，
+ 累積權重都會以這個速度增加。因為所有新進的交易都會間接的驗證此交易。
+ \item 您可以視一個交易被現在的 tips 間接驗證的這段時間為適應階段。
+而其標準的適應階段長度由~\eqref{eq_t0} 得出.
 \end{enumerate}
 
 
-\section{Possible attack scenarios}
+\section{可能的攻擊情況}
 \label{s_attacks}
-We start by discussing an 
-%obvious 
-attack scenario where the attacker tries to ``outpace'' the network alone:
-% Let us describe an attack scenario:
+讓我們在討論一個攻擊方案，當攻擊者試圖「趕上」整個網路：
 \begin{enumerate}
- \item An attacker sends a payment to a merchant and receives 
- the goods after the merchant decides the transaction has a sufficiently large
-  cumulative weight.
-% the attacker pays to the merchant, and receives the 
-%goods after the merchant considers that the transaction got already 
-%a sufficiently large cumulative weight;
-\item The attacker issues a double-spending transaction.
-\item \label{x_strategy} The attacker uses their computing
- power to issue many small transactions that approve the
-  double-spending transaction, but do not approve the 
-  original transaction that they sent to the merchant either 
-  directly or indirectly.
-%the attacker issues a lot of small transactions
-%(very aggressively, with all his computing power)
-%that ​do​ ​not​ approve the original 
-%one directly or indirectly, but approve the double-spending transaction;
-\item It is possible for the attacker to have a plethora of Sybil
- identities which are not required to approve tips.
-%observe that the attacker may have a lot of Sybil identities,
-%and also is not required to necessarily approve tips;
-\item An alternative method to item~\ref{x_strategy}
- would be for the attacker
- to issue a big double-spending transaction using all of their
-  computing power. This transaction would have a very large
-   own weight\footnote{Here we assume that the own weight 
-   of a transaction may vary. It will become clear in the discussion
-    below why it is a good idea to let the own weight vary.}, 
-    and would approve transactions prior to the 
-   legitimate transaction used to pay the merchant.
-%alternatively to item~\ref{x_strategy}, the attacker may use
-%all his computing power to issue a ``big'' double-spending transaction 
-%(i.e., with a very large own weight\footnote{here we assume again that
-%the own weight of a transaction may vary; in fact, from the
-% discussion below it will become clear why it is not a good idea
-%to let it vary (at least to let it vary too much)})
-% that approves a couple
-%of transactions prior to the legitimate one (the one used to pay to 
-%the merchant);
-\item The attacker hopes that their dishonest subtangle outpaces 
-the honest subtangle. If this happens, the main tangle continues 
-growing from the double-spending transaction, and the legitimate 
-branch with the original payment to the merchant is orphaned (Figure~\ref{f_bigPoW}).
-%he hopes that his ``sub-DAG'' outpaces the main one,
-%so that the DAG continues growing from the double-spending
-%transaction, and the legitimate branch is discarded
-%(see Figure~\ref{f_bigPoW}).
+ \item 攻擊者付款給商家，在商家認為交易已經獲得了足夠大的累積權重之後，攻擊者拿到了商品
+\item 接下來攻擊者發佈了一筆雙重支付的交易
+\item \label{x_strategy} 攻擊者同時發送大量較小的交易，
+這些交易不直接或者間接驗證原始的付款交易，而是去驗證那筆雙重支付的交易
+\item 可以看到攻擊者也許就擁有大量的女巫攻擊身份，並且不對 tips 進行驗證
+\item 在第~\ref{x_strategy} 步中，也可以採用另外的一種方案，
+攻擊者使用所有它的計算能力去發送一筆大的雙重支付交易，這筆交易具有非常大的自身權重，
+\footnote{這裡我們假設自身權重可以很多樣。下面的討論會更清楚的解釋為什麼要讓自身權重值很多樣。}，
+並驗證在原始付款交易之前的交易
+\item 攻擊者期望他的 sub-DAG 超越主體 DAG，從而使得 DAG 持續從攻擊者的雙重支付交易進行增長，
+以便使得之前合法的支付交易被拋棄掉(如圖~\ref{f_bigPoW} 所示)。
 \end{enumerate}
-In fact, it can be shown that the strategy of one large double-spending 
-transaction increases the attacker's chances of being successful. 
-%we will see below that that the strategy of one big 
-%double-spending transaction increases the attacker chances. Even more,
-In the ``ideal'' situation of this mathematical model, this attack
-\emph{always} succeeds. 
+事實上，接下來我們可以看到這種大權重的雙重支付交易策略可以增加攻擊者成功的機率。
+而且，在這種數學模型的「理想」情況下，這種攻擊\emph{總是}可以成功的。
 
-Let~$W^{(n)}$ be the time needed to obtain a nonce that 
-gives the double-spending transaction a weight of at
- least~$3^n$.
- % to the double-spending transaction.
-One may assume that~$W^{(n)}$ is an exponentially distributed
-random variable with parameter\footnote{With 
-expectation $\mu^{-1}3^n$.} $\mu 3^{-n}$, where~$\mu$ represents the computing 
-power of the attacker. 
+假設 $W^{(n)}$ 為獲得權重至少為 $3^n$ 的雙重支付交易的 nonce 的時間。
+我們可以假設 $W^{(n)}$ 是一個以 $\mu3^{-n}$ 為參數\footnote{比如，期望值為 $\mu^{-1}3^{-n}$ }的指數分佈的隨機變數，
+其中 $\mu$ 表示攻擊者的計算能力。
 
-Assume that the merchant 
-accepts the legitimate transaction when its cumulative 
-weight becomes at least~$w_0$, which happens~$t_0$
-time units after the original transaction. It is reasonable
-to expect that the cumulative weight grows with linear
-speed~$\lambda w$, where~$\lambda$ is the overall arrival rate
-of transactions issued on the network by honest nodes,
-% to the system (issued by honest users)
- and~$w$ is the mean weight
-of a generic transaction. The typical total weight of the legitimate 
-branch at that time is $w_1=\lambda w t_0$.
-% the typical total weight of the legitimate branch at that time.
+假設商家在一筆合法交易的累積權重達到至少 $w_0$ 才接受，須經過 $t_0$ 個時間單位。
+因此可以認為其累積權重將以線性速度 $\lambda w$ 增長，
+其中 $\lambda$ 是系統中由誠實使用者發送的交易的總體到達速率，而 $w$ 是一般交易的平均權重。
+記 $w_1=\lambda wt_0$ 為在商家接受交易時合法分支的總權重。
 
-Let $\lceil x\rceil$ be the smallest integer greater than
-or equal to~$x$,
-define $n_0=\big\lceil \frac{\ln w_1}{\ln 3}\big\rceil$, 
-so that $3^{n_0}\geq w_1$\footnote{In fact, $3^{n_0}\approx w_1$
-if~$w_1$ is large.}. If the attacker managed to obtain a nonce
-that gives the double-spending transaction a weight of at least~$3^{n_0}$ during the time interval
-of length~$t_0$,
- then the attack 
-succeeds. 
+假設 $\lceil x\rceil$ 是大於或等於 $x$ 的最小整數，定義 $n_0=\lceil\dfrac{\ln{w_1}}{\ln3}\rceil$ ，
+那麼 $3^{n_0}\geq w_1$ \footnote{事實上，如果 $w_1$ 較大，則 $3^{n_0}\approx w_1$ }。
+如果在 $t_0$  時間間隔內，攻擊者設法獲得了一個 nonce 以使得雙重支付交易的權重至少為 $3^{n_0}$，那麼攻擊就成功了。
 \begin{figure}
- \centering \includegraphics[width=\textwidth]{bigPoW} 
-\caption{The ``large weight'' attack}
-\label{f_bigPoW}
-\end{figure}
-The probability of this event is
+  \centering \includegraphics[width=\textwidth]{bigPoW} 
+ \caption{「大權重」攻擊}
+ \label{f_bigPoW}
+ \end{figure}
+這種成功攻擊的概率是
 \[
  \IP[W^{(n_0)}<t_0]=1-\exp(-t_0\mu 3^{-n_0})
   \approx 1-\exp(-t_0\mu w_1^{-1})
   \approx \frac{t_0\mu}{w_1}.
 \]
-This approximation is true in the case where 
-$\frac{t_0\mu}{w_1}$ is small, which is 
-a reasonable assumption. If this ``immediate'' attack
-does not succeed, the attacker may continue to look for the nonce
-that gives weight~$3^n$ for $n>n_0$, and hope that at the moment
-they find it, the total weight of the legitimate branch is smaller
-than~$3^n$. The probability of this event occurring is
+在 $\dfrac{t_0\mu}{w_1}$ 很小的情況下，這個近似是合理的假設。
+然而，如果這種「即刻」攻擊沒有成功的話，攻擊者可以繼續尋找 nonce 以使得權重為 $3^n$ ，
+其中 $n>n_0$，並希望在找到 nonce 的時候，合法交易分支的總權重要小於 $3^n$。這種情況的機率是
 \[
  \IP[\lambda w W^{(n)}<3^n]
 =1-\exp\big(-\mu 3^{-n_0}\times (3^{n_0}/\lambda w)\big)
   = 1-\exp(- \mu/\lambda w)
   \approx \frac{\mu}{\lambda w}.
 \]
-That is, although $\frac{\mu}{\lambda w}$ should typically
-be a small number, at each ``level'' $n$ the attack succeeds with a constant
-probability. Therefore, it will a.s. succeed. 
-%In fact,
-The typical time until it succeeds 
-is roughly $3^\frac{\lambda w}{\mu}$. Although this quantity
-may be very large, the probability that the 
-``first''\footnote{During the time~$t_0$.} attack succeeds 
-is not negligible. 
-%We thus arrive to the following conclusion:
-Therefore, we need countermeasures. One such countermeasure 
-would be limiting the own weight from above, or even setting 
-it to a constant value. As mentioned in Section~\ref{s_cutsets}, the 
-latter may not be the best solution because it does not offer 
-enough protection from spam.
-%For example,
-%limit the own weight from above, or even set it to constant
-%(as mentioned in Section~\ref{s_cutsets}, the latter
-%may be not the best solution, since it does not 
-%offer enough protection from spam).
+
+也就是說，儘管 $\dfrac{\mu}{\lambda w}$ 一般情況下應該是很小，在每一個 $n$ 值水準下，攻擊成功具有恒定的機率。
+因此，最終總是可以攻擊成功。通常攻擊成功的須費時約 $3^{\lambda w/\mu}$ 。儘管這個數量可能非常大，
+但是「第一次」\footnote{在時間 $t_0$ 內}成功攻擊的機率仍不容忽視。因此我們需要對策：
+其一便是限制最大權重的值，甚至是設為固定常數值。如前面第~\ref{s_cutsets} 節所提到的，
+後面的那種策略也許不是最好的方案，因為那樣不能為大量垃圾交易攻擊提供足夠的保護。
+
 
 \medskip
 
-Now, let us discuss the situation
-where the maximum own weight is capped at a value of~$1$,
- and estimate the probability that the attack succeeds.
- %(the general case can be treated in the same
-%way, simply by rescaling)
+那麼現在我們來討論當最大權重具有上限，且上限為 $1$ 時，估算攻擊成功的概率。 
 
-Assume that a given transaction gained
- cumulative weight~$w_0$ in~$t_0$ time units after the moment
-when it was issued, and
-%Assume also 
-that the adaptation period for 
-that transaction is over. In this situation, the transaction's
- cumulative weight
-increases linearly with speed~$\lambda $. Now, 
-imagine that the attacker wants to double-spend on this transaction.
-To do so, the attacker secretly prepares the double-spending transaction,
- and starts generating \emph{nonsense} transactions 
-that approve the double-spending transaction at the 
-time\footnote{Or even before; we discuss this case later.}
- when the \emph{original} transaction was issued to the merchant.
-%he/she secretly prepares the double-spending transaction, 
-%and starts generating other transactions
-%that approve the double-spending one. 
-If 
-%at some moment
-%(after the merchant decides to accept the legitimate
-%transaction) 
-the attacker's subtangle outpaces the legitimate
-subtangle at some moment after the merchant decides to accept 
-the legitimate transaction, then the double-spending attack would be successful.
-If that does not happen, then
-the double-spending transaction 
-would not be approved by others 
-because the legitimate transaction would acquire more cumulative 
-weight and essentially all new tips would indirectly 
-approve it. The double-spending transaction would be orphaned in 
-this scenario.
-% and so it will be orphaned.
+假設給定的一筆交易在發送後經過 $t_0$ 個時間單位後，獲得累積權重為 $w_0$ ，
+並假設這筆交易的調整階段已經結束，因此其累積權重以 $\lambda$ 的速度線性增長。
+現在，想像攻擊者試圖對這筆交易進行雙重支付攻擊；為此，
+他隱密的準備了雙重支付交易，並在商家決定接受第一筆合法的\emph{原始}交易之後開始生成\emph{其他的}交易來驗證這筆雙重支付交易
+\footnote{或是在更早的時候; 稍後討論這個情況}。
 
-As before, let~$\mu$ stand for the computing power of the attacker.
-%(i.e., the speed of transactions' generation). 
-We also make a simplifying assumption that the 
-transactions propagate instantly.
-Let $G_1,G_2, G_3,\ldots$ denote i.i.d.\ exponential 
-random variables with parameter~$\mu$\footnote{With expected
- value~$1/\mu$.}, and define
-$V_k=\mu G_k$, $k\geq 1$. It follows that
-$V_1,V_2, V_3,\ldots$ are i.i.d.\ exponential 
-random variables with parameter~$1$. 
+若攻擊者的 subtangle 的權重要大於合法交易 subtangle 的權重的話，雙重支付攻擊就會成功。
+如果在商家決定接受這筆合法交易後，攻擊者的 subtangle 在某個時刻超越了合法的 subtangle，則雙重支付的攻擊便會成功。
+如果上述情況不出現的話，那麼雙重支付就不會被其他交易驗證，因為合法的交易獲得更多的累積權重並且最終所有新的 tips 都會間接驗證這筆交易，
+因此雙重支付也就成為了孤立交易了。
 
-Suppose that at time~$t_0$ the merchant decides to accept
-the transaction with cumulative weight~$w_0$.
-%(recall that it has cumulative weight~$w_0$
-%at that time).
-Let us estimate the probability that the attacker
-successfully double-spends. Let $M(\theta)=(1-\theta)^{-1}$
-be the moment generating function of the exponential
-distribution with parameter~$1$ (Section~7.7
-of~\cite{Ross}). 
-It is known\footnote{This is a consequence of the so-called
-Large Deviation Principle.
-See the general book~\cite{DZ}, and
- Proposition~5.2 in Section~8.5 of~\cite{Ross}
-for a simple and instructive derivation of the 
-upper bound, and Section~1.9 of~\cite{Dur} for the 
-(not so simple) derivation of the lower bound.} that for~$\alpha\in (0,1)$ it holds that
+如前所述，假定 $\mu$ 為攻擊者的計算能力，我們也假設交易是立即被傳播出去的。
+假定 $G_1,G_2, G_3,\ldots$ 是以 $\mu$ 為參數\footnote{期望值為 $1/\mu$}的獨立同分佈的指數分佈變數，
+並定義 $V_k=\mu G_k$，$k\geq1$。接著，$V_1, V_2,V_3...$ 是以 $1$ 為參數的獨立同分佈的指數分佈的變數。
+
+假設在 $t_0$ 時刻商家決定接受交易其累積權重為 $w_0$ 。
+讓我們來估算一下攻擊者成功完成雙重支付攻擊的機率。
+記 $M(\theta)=(1-\theta)^{-1}$ 記作指數分佈參數為 $1$ 的動差生成母函數，
+(參考文獻~\cite{Ross} 中~7.7 節)。對於 $\alpha\in(0,1)$\footnote{這是所謂的大偏差定理 (Large Deviation Principle) 的影響
+參照書籍~\cite{DZ}, 以及~\cite{Ross} 第~8.5 節的定理~5.2 中簡單且有建設性的導出上限值。
+還有~\cite{Dur} 第~1.9 對下限值的推導(較困難)。}，
+於是有如下公式成立:
 \begin{equation}
 \label{Chernoff}
  \IP\Big[\sum_{k=1}^n V_k \leq \alpha n\Big] \approx
    \exp\big(-n\phi(\alpha)\big), 
 \end{equation}
-where $\phi(\alpha)=-\ln \alpha + \alpha -1$ is the Legendre
-transform of $\ln M(-\theta)$. 
-%Observe that, 
-As a general fact,
-it holds that $\phi(\alpha)>0$ for~$\alpha\in (0,1)$. Recall
-that the expectation of an exponential random variable 
-with parameter~$1$ also equals~$1$.
+其中 $\phi(\alpha)=-\ln \alpha + \alpha -1$ 是對 $\ln M(-\theta)$ 的拉格朗日轉換。
+一般而言，當 $\alpha\in(0,1)$，$\varphi(\alpha)>0$ 是成立的。回顧指數隨機變數 Exp(1) 的期望值等於~$1$）。
 
-Assume that $\frac{\mu t_0}{w_0}<1$, otherwise the probability
-that the attacker's subtangle
-eventually outpaces the legitimate subtangle would be close to~$1$.
-Now, to outweigh~$w_0$ at time~$t_0$, the attacker needs
-to be able to issue at least $w_0$ 
-%(for simplicity, we drop the integer parts) 
-transactions with maximum own weight~$m$
-during time~$t_0$. 
-Therefore, using~\eqref{Chernoff}, we find
- the probability that the double-spending transaction
-has more cumulative weight at time~$t_0$
-is roughly
+假設 $\frac{\mu t_0}{w_0}<1$，否則，攻擊者的 Subtangle 最終超過合法的機率就接近於~$1$。
+現在，為了在 $t_0$  時刻超過 $w_0$ ，攻擊者需要在 $t_0$ 時間單位內至少發送 $w_0$ 筆最大權重為 $m$ 的交易。
+因此，通過公式~\eqref{Chernoff}，我們可以得到雙重支付交易在 $t_0$ 時刻有更大累積權重的機率大概是
 \begin{align}
  \IP\Big[\sum_{k=1}^{w_0/m} G_k  < t_0\Big]
  & = \IP\Big[\sum_{k=1}^{w_0} V_k  < \mu t_0\Big]
@@ -1634,556 +539,220 @@ is roughly
 \phi\big(\textstyle\frac{\mu t_0}{w_0}\big)\big).
 \label{double_t0}
 \end{align}
-For the above probability to be small,
-$\frac{w_0}{m}$ needs to be large 
-and~$\phi\big(\textstyle\frac{\mu t_0}{w_0}\big)$
-cannot be very small. 
+也就是說，為了讓上面的機率非常小，我們需要 $\frac{w_0}{m}$ 很大，且 $\phi\big(\textstyle\frac{\mu t_0}{w_0}\big)$ 不能非常小。
 
-Note that, at time~$t\geq t_0$, the cumulative weight
-of the legitimate transaction is roughly~$w_0+\lambda (t-t_0)$
-because we assumed that the adaptation period is over,
-so the cumulative weight grows with speed~$\lambda$.
-Analogous to~\eqref{double_t0}, 
-one finds the probability that the double-spending transaction
-has more cumulative weight at time~$t\geq t_0$ is roughly
+注意到，在~$t\geq t_0$ 時刻時，合法交易的累積權重約為~$w_0+\lambda (t-t_0)$，因為我們假設適應階段已經結束了，
+因此累積權重是以~$\lambda$ 的速度增加。
+類似於~\eqref{double_t0}，可以得到在~$t\geq t_0$ 時，雙重支付交易會有較大權重的機率約為：
 \begin{equation}
 \label{double_t}
  \exp\big(-(w_0+\lambda (t-t_0))
 \phi\big(\textstyle\frac{\mu t}{w_0+\lambda (t-t_0)}\big)\big).
 \end{equation}
-Then, it must be true that we have $\frac{\mu t_0}{w_0}\geq 
-\frac{\mu}{\lambda}$ since the cumulative weight grows with 
-speed less than~$\lambda $ during the adaptation period. 
-It can be shown that the probability 
-of achieving a successful double spend is of order
+接著，必須確保 $\frac{\mu t_0}{w_0}\geq 
+\frac{\mu}{\lambda}$ ， 因為在適應期間累積權重是以低於~$\lambda $ 的速度增加。
+可以得到成功進行雙重支付的機率大概為：
 \begin{equation}
 \label{double_ever}
  \exp\big(-w_0\phi\big(\max(\textstyle\frac{\mu t_0}{w_0},
 \frac{\mu}{\lambda})\big)\big).
 \end{equation}
-For example, let $\mu=2$, $\lambda=3$
-so that the attacker's power is only a bit less than
-that of the rest of the network. Assume that the 
-transaction has a cumulative weight of~$32$ by time~$12$.
-Then, $\max(\frac{\mu t_0}{w_0},\frac{\mu}{\lambda}) = \frac{3}{4}$,
-$\phi\big(\frac{3}{4}\big)\approx 0.03768$,
-and~\eqref{double_ever} then gives the upper bound 
-approximately $0.29$. If one assumes that
-$\mu=1$ and keeps all other parameters intact, then
-$\max(\frac{\mu t_0}{w_0},\frac{\mu}{\lambda}) = \frac{3}{8}$,
-$\phi\big(\frac{3}{8}\big)\approx 0.3558$,
-and~\eqref{double_ever} gives approximately $0.00001135$,
-quite a drastic change.
+比如，假設 $\mu=2$, $\lambda=3$，因此攻擊者的計算能力只是比網路中其他所有的計算力稍微小一點點。
+假設在時間~$12$ 的時候，交易的累積權重為~$32$。那麼，
+$\max(\frac{\mu t_0}{w_0},\frac{\mu}{\lambda}) = \frac{3}{4}$,
+$\phi\big(\frac{3}{4}\big)\approx 0.03768$，
+且公式~\eqref{double_ever} 給出的上限大概是$0.29$。然而，若我們假設 $\mu=1$，並保持其他參數不變， 
+那麼 $\max(\frac{\mu t_0}{w_0},\frac{\mu}{\lambda}) = \frac{3}{8}$,
+$\phi\big(\frac{3}{8}\big)\approx 0.3558$，
+而公式~\eqref{double_ever} 得到大約是 $0.00001135$，確實有很大的變化。
 
+通過上述討論，我們觀察到很重要的一點就是，為了系統的安全，
+必須確保 $\lambda > \mu$。也就是說，「誠實」節點的交易流量應該比攻擊者的計算能力大。
+否則，公式~\eqref{double_ever} 的估算就沒有什麼用。
+這也意味著需要額外的安全措施，例如在 tangle 基礎的系統發展的早期，設立檢查點。
 
- From the above discussion it is important to recognize that 
- the inequality $\lambda > \mu$ should be true for the 
- system to be secure. 
-% for the system to be secure, it should be true that 
-% $\lambda > \mu$ 
-% (otherwise, the estimate~\eqref{double_ever} would be useless); i.e.,
-In other words, the input flow of ``honest''
-transactions should be large compared to the 
-attacker's computational power. Otherwise, 
-the estimate~\eqref{double_ever} would be useless. 
-This indicates the need
-for additional security measures, such as checkpoints,
-during the early days of a tangle-based system.
+對於如何決定兩個相互衝突的交易中哪一筆是合理的交易的策略來說， 
+僅依靠累積權重判斷的我們必須十分小心謹慎。
+這是因為可能是攻擊的目標，如同在~\ref{s_parasite} 節中所描述的攻擊。
+攻擊者也許會事先准備好雙重支付交易，構建一個 subtangle 來指向驗證這筆雙重支付交易，
+然後在商家接受合法交易之後將這個 subtangle 廣播出去。在下一節中我們將提出一個更好的方法來處理兩筆相互衝突的交易：
+運行 tip 選擇演算法，然後看這兩筆交易中哪一筆交易被選取的 tip 所間接驗證。
 
-
-%Also, as for the strategies for deciding which 
-%one of two conflicting transactions is valid,
-% one has to be careful when relying only on the cumulative 
-When choosing a strategy for deciding which one of 
-two conflicting transactions is valid, one has to be careful 
-when using cumulative weight as a decision metric. 
-This is due to the fact that cumulative weight can be subject
- to an attack similar
-to the one described
-in Section~\ref{s_parasite}, namely the attacker may prepare 
-a double-spending transaction well in advance, build a 
-secret subtangle referencing it, and then broadcast 
-that subtangle after the merchant accepts the legitimate 
-transaction.  
-% Rather
-A better method for deciding 
-between two conflicting transactions might be the one
-described in the next section: run the tip selection algorithm
-and see which of the two transactions is indirectly
-approved by the selected tip.
-
-\subsection{A parasite chain attack and a new tip 
-selection algorithm}
+\subsection{寄生鏈攻擊與 tip 選擇演算法}
 \label{s_parasite}
-Consider the following attack (Figure~\ref{f_tip_Markov}):
-an attacker secretly builds a subtangle that occasionally 
-references the main tangle to gain a higher score. 
-Note that the score of honest tips is roughly the sum 
-of all own weights in the main tangle, while the score
-of the attacker's tips also contains the sum of all own weights in the
-parasite chain.
-Since network latency is not an issue for an attacker
- who builds a subtangle 
-alone\footnote{This is due to the fact that an attacker can always
-approve their own transactions without relying on any
-information from the rest of the network.},
-they might be able to give more height
-to the parasite tips if they use a computer 
-that is sufficiently strong. Moreover, the attacker can artificially 
-increase their tip count at the moment of the attack by 
-broadcasting many new transactions that approve 
-transactions that they issued earlier on the parasite chain
-%Finally, the number of attacker's tips 
-%can be artificially increased at the moment of the attack
-%(by issuing a lot of transactions that all approve
-%\emph{the same} attacker's transactions,
-%see 
-(Figure~\ref{f_tip_Markov}).
-This will give the attacker an advantage in the case where 
-the honest nodes use some selection strategy 
-that involves a simple choice between available tips.
-
-To defend against this attack style,
-we are going to use the fact that the main tangle is supposed
-to have more active hashing power than the attacker. Therefore, the 
-main tangle is able to produce larger increases in cumulative weight 
-for more transactions than the attacker.  
-%manages to give more cumulative weight to more transactions than the attacker.
-The idea is to use a MCMC algorithm
-to select the two tips to reference. 
-
-Let $\HH_x$ be the current cumulative weight of a site.
- %(i.e., a transaction represented on the tangle graph). 
- Recall that we assumed all 
-own weights are equal to~$1$. Therefore, the cumulative weight of a tip
-is always~$1$, and the cumulative weight of other sites is at least~$2$.
-
-The idea is to place some particles, a.k.a.\ random walkers,
-on sites of the tangle and let them walk towards the tips
-in a random\footnote{There is not a ``canonical'' source of randomness.
-The nodes just use their own (pseudo)random number generators
-to simulate the random walks.} way. The tips ``chosen'' by the walks
-are then the candidates for approval.
-The algorithm is described in the following way:
-\begin{enumerate}
- \item Consider all sites on the interval $[W,2W]$, where 
- $W$ is reasonably large\footnote{The idea is to place the particle ``deep'' into
-the tangle so that it will not arrive at a tip straight away. However, the 
-particle should not be placed ``too deep'' because it needs to find a tip
- in a reasonable time. Also, the interval $[W,2W]$ is arbitrary. 
-One could chose $[W,5W]$, etc.
-There are also other ways to select the walkers' starting points.
- For example, a node can simply
-take a random transaction received between $t_0$ and
-$2t_0$ time units in the past, where~$t_0$ is some fixed time point.}.
-% transactions with cumulative weight
-% between $W$ and (say) $2W$ (where~$W$ 
-%is reasonably large, to be chosen
-
- \item Independently place $N$ particles on sites in that
-  interval\footnote{This choice
-is largely arbitrary. We use several particles instead of just two
-for additional security. The idea is that if a particle
-were to accidentally jump to the attacker's chain, which is supposed
-to be long, then it would spend a lot of time there 
-and other tips will be chosen first.}.
-  % there ($N$ is not so big, say, $10$ or so
+考慮如下攻擊(圖~\ref{f_tip_Markov})：攻擊者秘密的打造一個 subtangle，
+並偶爾指向驗證主網路以獲得更多的積分。注意，誠實的 tips 的積分大概是主網路中所有交易的自身權重之和，
+而攻擊者的 tips 還包含寄生鏈中所有交易的自身權重。而對於打造這個 subtangle 的攻擊者來說，
+網路延遲不是問題\footnote{這是因為攻擊者可以驗證他自己的交易而不仰賴網路中其他節點所提供的資訊}。
+如果他使用十分強大的電腦，攻擊者便能夠讓寄生 tips 具有更高的高度。
+此外，攻擊者可以在攻擊時任意增加 tip 數量，並廣播許多新交易驗證寄生鏈上較早的交易。
  
- \item Let these particles perform independent
- discrete-time random
- walks ``towards the tips'', meaning that a transition
-  from~$x$ to~$y$
-is possible if and only if~$y$ approves~$x$
- \item The two random walkers that reach the tip set first will
-sit on the two tips that will be approved.
-However, it may be wise to modify this rule in the 
-following way: first discard those random walkers that 
-reached the tips \emph{too fast} because they may have ended on one
-of the ``lazy tips''.
- \item The transition probabilities
- of the walkers are defined in the following
- way: if~$y$ approves~$x$ ($y\rightsquigarrow x$), 
-then the transition probability~$P_{xy}$
- is proportional to $\exp\big(-\alpha(\HH_x-\HH_y)\big)$,
-that is
+(圖~\ref{f_tip_Markov})
+當誠實節點使用某些只從有效的 tips 中簡單的選擇要驗證的 tip 的 tip 選擇演算法，這會給攻擊者優勢。
+
+為防禦這種攻擊，我們基於主 tangle 中應具有比攻擊者更多活躍的雜湊算力的事實，因此，
+主 tangle 比攻擊者能讓更多的交易獲得更大的累積權重。核心思想是使用 MCMC 演算法來選擇要指向的兩個 tips。
+
+假設某一筆交易目前的累積權重為 $\HH_x$，再次提醒，
+我們假設所以交易的自身權重等於~$1$。因此 tip 的累積權重一直都會是~$1$，而其他交易的累積權重至少是~$2$。
+
+這樣做是為了在 tangle 的節點上佈下一些點，慣用代稱為隨機漫步者 (random walker)，讓他們朝著 tips 隨機\footnote{
+沒有特定的起源，節點們僅使用自己的 (虛擬)亂數產生器模擬隨機漫步}行走。
+而被隨機漫步者挑中的 tips 就是待被驗證的候選交易。
+演算法描述如下：
+\begin{enumerate}
+ \item 考慮累積權重在 $[W,2W]$ 之間的所有交易，其中 $W$ 是很大\footnote{
+ 這個想法是把點放在很「深」的 tangle 中，所以不會直接走到 tip。然而，這個點不應該被放到太深的地方，
+ 因為它需要在合理的時間範圍內走到 tip。再者，$[W,2W]$ 這個區間是任意選定的，也可以將區間設置為 $[W,5W]$ 等。
+也有其他方法可以選擇隨機漫步的起始點，例如：某節點可以在過去的 $t_0$ 到 $2t_0$ 時間區間內接受到的交易中選擇，
+而 $t_0$ 是特定的時間點。}的一個數。
+ \item 獨立選擇在這個區間\footnote{
+   這個選擇是任意的。我們使用多個隨機漫步者，而非兩個是為了增加安全性。如果隨機漫步者意外的落在攻擊者的鏈上時，
+   此鏈應該很長，而導致花費太多時間走到 tip，而其他 tips 則會被優先選取。}中放置 $N$ 個隨機漫步者
+ \item 
+ 那些隨機漫步者將獨立的進行離散時間隨機行走到 tips，這代表著當 $y$ 驗證 $x$，就可以從 $x$ 轉到 $y$。
+ \item 最先抵達 tips 的前兩個隨機漫步者，這就意味著這是我們要進行驗證的兩個tips。然而，
+ 更好的做法是依照著個原則修改規定: 捨棄那些「太快」走到 tips 的隨機漫步者: 
+ 他們可能走到「懶惰的 tips」。
+ \item 隨機行走轉移機率按如下方式進行定義：如果 $y$ 驗證 $x$ ($y\rightsquigarrow x$)，
+  那麼轉移率 $P_{xy}$ 是正比於 $\exp\big(-\alpha(H_x-H_y)\big)$，也就是
  \begin{equation}
   \label{trans_probs}
    P_{xy} = \exp\big(-\alpha(\HH_x-\HH_y)\big)
 \Big(\sum_{z: z \rightsquigarrow x}
  \exp\big(-\alpha(\HH_x-\HH_z)\big)\Big)^{-1},
  \end{equation}
-where $\alpha>0$ is a parameter to be chosen\footnote{One can start 
-with $\alpha=1$.}.
+ 其中 $\alpha>0$ 是一個待選取的參數\footnote{可以從 $\alpha=1$ 開始}。
 \end{enumerate}
-Note that this algorithm is ``local'', meaning one does not need
- to traverse the tangle back to the genesis to perform relevant calculations.
-In particular, 
-observe that one does not need to calculate the cumulative
-weights for the whole tangle. At most one needs to calculate the 
-cumulative weights 
-for the sites that indirectly approve the starting point
-of the walker.
-
+需要注意的是這個演算法是局域性 (local) 的，這意味著我們不需要走訪到創始交易來計算所有的東西。
+特別是，注意到我們不需要計算整個 tangle 的累積權重。最多只須計算間接驗證與隨機漫步起始交易累積權重。
 
 \begin{figure}
  \centering \includegraphics[width=0.81\textwidth]{tip_Markov} 
-\caption{Visual representation of the tip selection algorithm for 
-honest tips, as well as the parasite chain. The two red circles 
-indicate an attempted double-spend by an attacker.
-%On the tip selection algorithm. The two red circles indicate
-%an attempted double-spend.
-}
+\caption{tip 選擇演算法與寄生鏈。兩個紅色圓圈所代表的是試圖進行雙重攻擊的交易。}
 \label{f_tip_Markov}
 \end{figure}
 
-To check that the algorithm works as intended, first consider the ``lazy
-tips''. These tips intentionally approve some old transactions
-to avoid doing verification work (Figure~\ref{f_tip_Markov}).
-Even if the particle 
-is on a site approved by a lazy tip, it is not probable that the lazy
-tip would be selected because the difference between cumulative
- weights would be very large and~$P_{xy}$ would be small.
- %, look at~\eqref{trans_probs}.
+為了說明這個演算法如我們所想像的那樣工作，首先考慮那些「懶惰的 tips」
+，他們故意選擇一些較早的交易以避免進行交易的驗證工作(如圖~\ref{f_tip_Markov})。注意到，即使某個交易被這樣的一個 tip 所驗證，
+也不太可能使得懶惰的 tip 被選中，因為累積權重的差異很大，而~$P_{xy}$ 非常小。
 
-Next, consider this alternate attack style: the attacker secretly builds
-a chain 
-%(a ``parasite chain'')
- containing a transaction that empties their account balance to 
-another account under their control, indicated as the leftmost red
-circle in Figure~\ref{f_tip_Markov}. Then, the attacker
-issues a transaction on the main tangle, represented by the rightmost red circle,
-and waits for the merchant to accept it. The parasite chain occasionally
-references the main tangle. However, the cumulative weight is not very 
-large in the parasite chain. It should be noted that the parasite chain cannot 
-reference the main tangle after the merchant's transaction. Furthermore, 
-% and so its sites have
-%good height/score (even better than those of the main tangle),
-%although the cumulative weight is not so big in that chain. 
-%Note also that it cannot reference the main tangle after 
-%the merchant's transaction. Also, 
-the attacker might try to artificially
-inflate the number of tips in their parasite chain 
-at the moment of the attack (Figure~\ref{f_tip_Markov}).
-%as shown on the picture. 
-The attacker's idea is to make the nodes issuing new transactions 
-reference the parasite chain so that the honest branch of the tangle will
-be orphaned.
+接下來，考慮另一種攻擊方式：攻擊者秘密地構建一條鏈，
+其中包含一筆交易用來從一個帳戶清空餘額並轉移到他所控制的另一個帳戶中，圖~\ref{f_tip_Markov} 中左邊的紅色圓圈。
+然後攻擊者在主 tangle 中發起另一筆交易，圖~\ref{f_tip_Markov} 中右邊的紅色圓圈，並等待商家接受它。
+寄生鏈偶爾指向主 tangle，然而寄生鏈的累積權重並不大。注意到寄生鏈在商家發起的交易後不能夠再指向主 tangle 了。
+而且，攻擊者可能試圖在攻擊的時候人為地任意增加寄生鏈的 tips，(圖~\ref{f_tip_Markov})。
+攻擊者是想要讓其他交易來驗證和指向寄生鏈，從而使得「誠實的」tangle 被孤立。
 
-It is easy to see why the MCMC selection algorithm
- will not select one of the attacker's tips with high probability.
-%Basically, the 
-The reasoning is identical to the lazy tip scenario:
-%the same as why the algorithm does not 
-%select the lazy tips:
- the sites on the parasite chain will
-have a cumulative weight that is much smaller 
-than the sites that they reference on the main tangle.
- Therefore, it is not probable that the random
-walker will ever jump to the parasite chain unless it begins there,
-and this event is not very probable either because the main tangle contains
-more sites. 
+現在可以很容易地看到為什麼 MCMC 選擇演算法具有很高的機率不去選擇攻擊者的任何一個 tips。
+這個演算法也同樣不會去選擇那些「懶惰」的 tips，其原因基本上是一樣的：
+寄生鏈上的交易相比於那些他們指向的主 tangle 上的交易的累積權重要小得多。
+因此，隨機行走不太可能會跳到寄生鏈，除非是從寄生鏈開始，但是這也不太可能，因為主 tangle 包含更多的交易。
+ 
+這裡提供一個附帶的保護措施，我們可以先用較大的 $\alpha$ 值選擇一個「模範的 tip」(幾乎是決定性的)，
+再用較小的 $\alpha$ 執行真正的 tip 的選擇。然後比對我們(間接)驗證的交易是否跟「模範的 tip」一樣。
 
-As an additional protecting measure, we can 
-first ran a random walk with a large~$\alpha$ (so that it is 
-in fact ``almost deterministic'') to choose a 
- ``model tip''; then, use random walks with small~$\alpha$
-for actual tip selection, but verify if the (indirectly)
-referenced transactions are consistent with the model tip.
+我們也可以發現，對於「總是」朝 tip 方向走的隨機漫步，直接使用遞迴，便可以簡單快速地計算出口的機率分布;這是我們「不希望」節點做的事。
+然而或許可以透過以下修正我們的方法:每一步的隨機漫步中，有 (假設) $\frac{1}{3}$ 的機率會往回走(遠離 tips 一步)。
+這種漫步最後會快速地到達 tips (因為它會漂往 tips)，但是難以計算出口的機率分布。
 
-Observe also that,
-for a random walk that \emph{always} moves towards the tips 
-it is very simple and rapid to calculate the exit probability distribution using a straightforward recursion; this is something
-that we \emph{do not} want the nodes to do. 
-However, it is possible to modify our approach in the following
-way: on each step, the random walk may
- backtrack (i.e., go 1 step away from the tips) 
-with probability (say) $\frac{1}{3}$ 
-(and divide the remaining $\frac{2}{3}$ as before). 
-The walk will reach the tips very queckly anyway 
-(because it has a drift towards the tips), 
-but it will not be so easy to calculate the exit measure. 
-% It is good that it's not easily calculable -- 
-% the "selfish" nodes won't have easy time.
+接著讓我們說明為什麼節點要遵循這個演算法。回顧我們在第~\ref{s_general} 節所提到的，
+假設至少一定「好的」比例的節點會遵循「參考的」演算法是非常合理的。
+而且因為計算力及網路延遲，tip 選擇演算法會傾向針對過去 tangle 的狀態計算，就是在發起交易的當下狀態。
+現在，故意採用更久以前的狀態可能是個好主意\footnote{
+隨機漫步者會從以前的某個狀態中找到之前的 tip，並持續隨機漫步道現在 tangle 中「真正的」tip}，如我們一直以來的解釋。
+想像一個「自私的」節點只想增加他的交易被驗證的機會與速度。這節提到的 MCMC 演算法定義了一個機率分佈的 tips 集合，
+更明確的說，對於節點而言，第一首選的 tip 會是機率最大的。
+然而，若其他節點也很「自私」而且用相同方法的話，那他們全部都會失敗。
+「許多」新交易會在同一時間驗證相同的兩個 tips，因此在接下來的驗證過程會有太多競爭。
+由於節點都是使用過去 tangle 的某個狀態，因此節點並不會馬上「感受到」因同時大量驗證這兩個 tips 後讓累積權重大幅增加的結果。
+因此，即使是自私的節點也會採用隨機的 tip 驗證演算法\footnote{
+如先前所述，比起跑多次 MCMC 演算法，除了往回走似乎沒有更簡單的方法尋找哪些 tips 比較「好」(也就是，被「誠實的節點」選到的機率較高)。
+然而，多次執行 MCRW 需要時間與資源: 在這上面花了時間後，tangle 的狀態早已改變，所以設置可能要重新開始。
+這就解釋了為什麼節點沒有放棄 MCMC 的理由，至少他們假設有很大比例的其他節點都依循預設的 tip 選擇方法。}
+而被選到的 tips 的機率與原本的機率分佈很接近。我們並沒有宣稱這個機率分佈的總和會等於原本的機率和，
+但上述的討論我們可以發現，兩者應該很接近。這表示選擇「壞」tip 的機率應維持低機率。在任何情況，
+並沒有太多的誘因讓自私的節點存在，因為只有減少一點點的驗證時間，這與其他分散式架構有根本上的不同，如比特幣。
+重要的是，節點沒有理由放棄 MCMC tip 選擇演算法。
 
-Let us comment on why 
- the nodes would follow this algorithm.
-Recall from Section~\ref{s_general} that
-it is reasonable to assume that at least a ``good'' proportion
-of the nodes will follow the \emph{reference} algorithm.
-Also, because of computational and network delays, the 
-tip selection algorithm would rather work with a past snapshot
-of the tangle with respect to the moment when a transaction
-is issued. \emph{It may be a good idea to intentionally
-move this snapshot to a time point further in the past\footnote{First
-the random walker finds a former tip with respect to that snapshot,
-and then it continues to walk towards the ``actual'' tips
-on the current tangle.}} in the reference algorithm 
-for the reasons that we explain in the sequel.
-Imagine a ``selfish'' node that just wants to maximize 
-the chances of their transaction being approved quickly.
-The MCMC algorithm of this section, which is adopted by a
- considerable proportion of nodes, 
-defines a probability
-distribution on the set of tips. 
-It is clear that a natural first choice for a selfish node would be
-to choose the tips where the maximum of that distribution 
-is attained. However, if many other nodes also behave
-in a selfish way 
-%(which is quite reasonable to assume as well)
- and use the same strategy, which is a reasonable assumption, 
- then they all 
-will lose. \emph{Many} new transactions will approve 
-the same two tips at roughly the same time, therefore
-generating too much competition between them for subsequent approval.
-It should also be clear that nodes will not immediately ``feel'' the cumulative 
-weight increase caused by this mass approval of the same two tips since 
-the nodes are using a past snapshot.
-%Since the nodes use a past snapshot, they will not yet ``feel''
-%the cumulative weight increase caused by this mass approval
-%of the two tips.
- For this reason, even a selfish node would have 
-to use some random tip approval algorithm\footnote{as noticed
-before, for a backtracking walk there 
-seem to be no easy way to discover which tips are 
- better (that is, more likely to be selected
-by ``honest'' nodes) other than running the MCMC many times.
-However, running MCRW many times requires time and other
-resources; after one spends some time on it, 
-the state of the tangle will already change, 
-so one would possibly even have to start anew.
-This explains why nodes do not have reasons
-to abandon the MCMC tips selection strategy in favor
-of something else, at least if they assume that a 
-considerable proportion of the other nodes follow
-the default tips selection strategy.}
- with a 
-probability distribution for tip selection that is close to
-% the selected tips should
-%be, in some sense, ``not far away'' from
- the default probability distribution produced
-by the reference tip selection algorithm.
-We do not claim that this ``aggregated'' probability
-distribution
-would be equal to the default probability distribution in the presence of selfish nodes. 
-However, the above argument shows that it should be close to it.
-This means that the probability of many nodes attempting 
-to verify the same ``bad'' tips would remain small. 
-% selecting ``bad'' tips would remain small. 
-In any case, 
-%(differently from Bitcoin), 
-there is not a large incentive for the nodes to be selfish 
-because possible gains only amount to a slight decrease 
-in confirmation time. This is inherently different from other 
-decentralized constructs, such as Bitcoin. The important 
-fact is that nodes do not have reasons to abandon the
- MCMC tip selection algorithm.
+我們想要再提及轉移機率的定義，不一定如~\eqref{trans_probs} 那樣所定義的一成不變。除了指數函數外，
+我們還可以選擇其他衰減更快的函數，比如~$f(s)=s^{-3}$。也可以自由的選擇 $W$ 與 $N$。
+此時，還未有更明確的理論告訴我們該如何設定這些參數，
+總之，我們認為這一節最主要的貢獻就是提出 MCMC 做為 tip 選擇演算法；。
 
 
-We would like to mention that the definition of transition 
-probabilities, as given in~\eqref{trans_probs}, has not been 
-set in stone.
-% Also, it is not set in stone that the transition probabilities
-%should necessarily be defined as in~\eqref{trans_probs}.
-Instead of the exponent, one can use a different function 
-that decreases rapidly, such~$f(s)=s^{-3}$. 
-There is also freedom for choosing~$W$ and~$N$ as well.
-At this point in time, it is unclear if there are any theoretical 
-arguments that show exactly in which way these parameters 
-should be chosen. In sum, we feel that the main contribution 
-of this section is the idea of using MCMC for tip selection.
-%In fact, the author's feeling is that the main contribution
-%of this section is the very idea of using MCMC for tip selection;
-%it is unclear if there is any ``theoretical''
-%argument that shows exactly in which way these parameters
-%must be chosen.
-
-\subsection{Splitting attack}
+\subsection{分裂攻擊}
 \label{s_splitting}
-Aviv Zohar suggested the following attack scheme against the 
-proposed MCMC algorithm.
-In the high-load regime, 
-an attacker can try to split the tangle into two branches 
- and maintain the balance between them.
-This would allow both branches to continue to grow.  
-The attacker must place at least 
-two conflicting transactions at the beginning of the split to prevent an honest node from effectively joining the branches 
-by referencing them both simultaneously.
-% Thereby split the power of the entire network. The network itself 
-% work (because of the use of MCMC) almost equally to both sectors 
-% and an attacker would only spend a little to balance. 
-% In other words, weak inhibitor valid decision at will and splits 
-% the computing power of the network to monitor contradictory versions. 
-% It can also incorporate double spend parallel attacks.
-Then, the attacker hopes that roughly half of the network would
-contribute to each branch so that they 
-would be able to ``compensate'' for random fluctuations,
-even with a relatively small amount of personal computing power. 
-If this technique works, the attacker would be able to spend the same
-funds on the two branches.
+針對 MCMC 演算法的攻擊策略由 Aviv Zohar 提出。在高負載區，攻擊者可以試圖將 tangle 分裂成兩個分支，
+並在這兩個分支中均保持自己的餘額，這會允許兩個分支繼續增長。
+攻擊者則必須在分裂開始的時候放入至少兩個相互衝突的交易，預防誠實的節點同時指向兩個分支而有效地合併兩個分支。
+接著，攻擊者希望網路中約一半的交易分別貢獻給兩個分支，從而可以「補償」 隨機的漲落，即使他所擁有的只有相對較小的計算能力。
+若這個方法成功，攻擊者便可以在兩個分支中都使用同一筆資金。
 
-To defend against such an attack, one needs to use a
-``sharp-threshold'' rule 
-%(like ``select the longest chain'' in Bitcoin) 
-that makes it too hard to maintain the balance
-between the two branches. An example of such a rule is 
-selecting the longest chain on the Bitcoin network. Let us 
-translate this concept to the tangle when it is undergoing a 
-splitting attack. Assume that
-the first branch has total weight 537, and the second branch 
-has total weight 528. If an honest
-node selects the first branch with probability very close to~$1/2$,
-then the attacker would probably be able to maintain the
-balance between the branches. However, if an honest
-node selects the first branch with probability
-much larger than $1/2$, then the attacker would probably
-be unable to maintain the
-balance. The inability to maintain balance between the two branches in 
-the latter case is due to the fact that after an inevitable random fluctuation,
-the network will quickly choose one of the branches and abandon the other. 
-In order to make the MCMC algorithm behave this way,
-one has to choose a very rapidly decaying function~$f$,
-and initiate the random walk at a node with
- large depth so that it is highly probable
-that the walk starts before the branch bifurcation.
-In this case, the random walk would choose the ``heavier''
-branch with high probability, even if the difference in
- cumulative weight between the competing branches is small. 
-
-It is worth noting that the attacker's task is very 
-difficult because of network synchronization
-issues: they may not be aware of a large number 
-of recently issued transactions\footnote{The ``real''
-cumulative weights may be quite different from 
-what they believe.}. Another effective 
-method for defending against a 
-splitting attack would be for a sufficiently
-powerful entity to instantaneously publish a large number
- of transactions on one branch, thus rapidly changing the power balance
-and making it difficult for the attacker to deal with this change. 
-If the attacker manages to maintain
-the split, the most recent transactions will only have around $50$\%
- confirmation confidence (Section~\ref{s_general}), and the branches 
-will not grow. In this scenario, the ``honest'' nodes may decide to start 
-selectively giving their approval to the transactions that occurred before 
-the bifurcation, bypassing the opportunity to approve the conflicting 
-transactions on the split branches.
-%only the pre-split transactions then (and, in particular,
-%not approve neither of the two conflicting transactions).
-
-One may consider other versions of the 
-tip selection algorithm. For example, if a node sees
- two big subtangles, 
-then it chooses the one with a larger sum of own weights 
-before performing the MCMC tip selection algorithm outlined above.
-%and then does the tip selection only there using the 
-%above MCMC algorithm. 
-
-The following idea may be worth considering for future implementations. 
-One could make the transition probabilities defined 
-in~\eqref{trans_probs} depend 
-on both $\HH_x-\HH_y$ and $\HH_x$ in such a 
-way that the next step of the Markov chain is almost deterministic
-when the walker is deep in the tangle, yet becomes more 
-random when the walker is close to tips. This will help avoid entering the 
-weaker branch while assuring sufficient randomness when choosing the 
-two tips to approve.
-% (so that there is enough randomness in the choice
-%of the two transactions to approve). 
+為了抵抗這種攻擊，我們需要使用一些「高門檻」的規則使得同時維持兩個分支上的餘額是十分困難的，如在比特幣網路中選擇最長鏈。
+讓我們將這個概念轉換到正在遭受分裂攻擊的 tangle 上，
+假設第一個分支具有權重共 537，而第二個分支的總權重為 528。
+若一個誠實的節點選擇第一分支的機率就非常接近於~$1/2$，
+這樣很可能攻擊者也可以在兩個分支中都保持帳戶餘額。然而，如果誠實節點偏向於第一分支的機率比~$1/2$ 要大很多的話，
+那麼攻擊者就很難維持兩個分支的餘額。經過不可避免的無規漲落，網路會迅速選擇其中的一個分支，而拋棄掉另一個。
+為了使得 MCMC 演算法具有這樣的行為，我們需要選擇一個迅速衰減函數~$f$，
+並且在一個相對較大深度的節點開始進行隨機漫步，這樣就可以極大可能性地在網路分裂之前開始隨機漫步。
+這種情況下，無規行走就會有很大機率選擇「較重」的分支，即使兩個分支的權重差很小。 
+   
+值得注意的是由於網路同步的問題，攻擊者的難度變得非常高: 他們可能不會注意到一個近期發起的大量交易\footnote{
+「真正的累積權重」可能與他們認知的大相逕庭。}另一個有效抵抗分裂攻擊的方法是一個擁有足夠計算力的節點，
+立即在某一個分支上發起大量的交易，這會讓攻擊者很難面對這樣的巨大改變。如果攻擊者試圖主導分裂，
+最近期的交易指會有 $50$\% 被驗證的信心 (第~\ref{s_general} 節)，且分支不會再成長。
+在這個架構下，誠實的節點可能會決定開始選擇性的驗證分裂之前的交易，而避免會驗證到分支上的衝突交易。
+ 
+也可以考慮其他改進的 tip 選擇演算法。比如說，如果一個節點看到兩個大的 subtangles，
+那麼在進行 MCMC 演算法前就會選擇自身權重之和較大的一個分支。
+如下思路也許值得考慮： 設想在~\eqref{trans_probs} 中的轉移機率不僅僅與 $\HH_x-\HH_y$ 相關，而且還依賴於 $\HH_x$ ，
+這樣接下來的馬可夫鏈在隨機漫步的時候進入較深的 tangle 中就近乎是確定性的，
+而當接近于 tips 的時候，會避免進入較弱的分支，因此也就有足夠的隨機性來選擇兩筆交易進行驗證。
 
 
-
-\paragraph{Conclusions:}
+\paragraph{結論:}
 \begin{enumerate}
- \item We considered attack strategies for when an 
-attacker tries to double-spend by ``outpacing'' the system.
- \item The ``large weight'' attack means that, in order to 
-double-spend, the attacker tries to give a very large weight
-to the double-spending transaction so that it would 
-outweigh the legitimate subtangle. This strategy would be 
-a menace to the network in the case where the allowed own weight is
-unbounded. As a solution, we may limit the own weight
-of a transaction from above, 
-or set it to a constant value.
- \item In the situation where the maximal own weight
-of a transaction is~$m$, the best attack strategy
-is to generate transactions with own weight~$m$
-that reference the double-spending transaction. 
-When the input flow of ``honest''
-transactions is large enough compared to the 
-attacker's computational power, the probability
-that the double-spending transaction
-has a larger cumulative weight can be estimated
-using the formula~\eqref{double_ever} (see also
-examples below~\eqref{double_ever}).
- \item The attack method of building a ``parasite chain''
-makes approval strategies based on height or score
-obsolete since the attacker's sites will have higher values 
-for these metrics when compared to the legitimate tangle. On the other hand,
-the MCMC tip selection algorithm described in Section~\ref{s_parasite}
-seems to provide protection against this kind of attack.
-\item The MCMC tip selection algorithm also offers protection against 
-the lazy nodes as a bonus.
-%As a 
-%bonus, it also offers protection against the ``lazy nodes'',
-%i.e., those that just approve some old transactions to avoid 
-%doing the calculations necessary for validating the tangle.
+ \item 我們針對攻擊者試圖超越網路並進行雙重交易，考慮了幾種攻擊策略。
+ \item 「大權重」攻擊意味著，為了進行雙重，攻擊者試圖發起一筆大權重雙重交易，從而超過合法的 subtangle。
+ 這種攻擊在交易的自身權重不設上限的情況下，對於網路的確是一個威脅。
+ 解決方法就是，我們可以限制交易的自身權重上限，或者將自身權重設為常數。
+ \item 當交易自身權重最大值為 $m$ 的時候，最好的攻擊策略是產生一筆自身權重為~$m$ 的交易，
+ 並且指向驗證雙重支付交易。如果交易輸入流中的誠實交易相比攻擊者的計算能力要足夠大的時候，
+ 那麼雙重交易具有更多的累積權重的機率可以通過公式~\eqref{double_ever} 來進行估計（同時也可以參考~\eqref{double_ever} 下面的例子）。
+ \item 構建「寄生鏈」的攻擊可以使得基於高度和積分的驗證策略無效，因為攻擊者可以得到比合法 tangle 更高的積分。
+ 而~\ref{s_parasite} 節中描述的 MCMC tip 選擇演算法可以抵抗這種攻擊。
+\item MCMC tip 選擇演算法還可以抵抗「懶惰節點」。
 \end{enumerate}
 
 
 
-\section{Resistance to quantum computations}
+\section{抵抗量子計算}
 \label{s_quantum}
-It is known that a sufficiently large
- quantum computer\footnote{Still a hypothetical construct as of today.}
-  could be very efficient for handling problems
-that rely on trial and error to find a solution. The process of finding a nonce
-in order to generate a Bitcoin block is a good example 
-of such a problem. As of today, one must 
-check an average of $2^{68}$ nonces to find a suitable hash
-that allows a new block to be generated. 
- It is known (see e.g.~\cite{BHT}) that a quantum computer would need 
-$\Theta(\sqrt{N})$ operations to solve a problem that is analogous to 
-the Bitcoin puzzle stated above. This same problem would need
-~$\Theta(N)$ operations on a classical computer.
-Therefore, a quantum computer would be 
-around $\sqrt{2^{68}}=2^{34}\approx 17$ billion times
-more efficient at mining the Bitcoin blockchain than a classical computer.
-Also, it is worth noting that
- if a blockchain does not increase its difficulty in response 
-to increased hashing power, there would be an 
-increased rate of orphaned blocks.
-
-For the same reason, a ``large weight'' attack would also be much more 
-efficient on a quantum computer.
-%described above would also be much more efficient on a quantum
-%computer. 
-However, capping the weight from above, as suggested
-in Section~\ref{s_attacks}, would effectively prevent
-a quantum computer attack as well. This is evident in iota because 
-the number of nonces that one needs to check in order
-to find a suitable hash for issuing a transaction is not 
-unreasonably large. On average, it is around~$3^8$. 
-The gain of efficiency for 
-an ``ideal'' quantum computer would therefore
-be of order $3^{4}=81$, which is already quite 
-acceptable\footnote{Note that $\Theta(\sqrt{N})$
-could easily mean $10\sqrt{N}$.}.
-More importantly, the algorithm used in the iota implementation 
-is structured such that the time to find a nonce is 
-not much larger than the time needed for other tasks that 
-are necessary to issue a transaction. The latter part is much
- more resistant against quantum computing, and therefore 
- gives the tangle much more protection against an adversary with a 
- quantum computer when compared to the (Bitcoin) blockchain.
+足夠大的量子電腦\footnote{直到今天仍然只是假設}在解決那些只能通過猜測結果並重複進行檢驗的問題時具有極高的效率。
+為生成一個比特幣區塊而尋找 nonce 就是這類問題中的一個很好的例子。在目前，
+平均來說必須查找 $2^{68}$ 個 nonces 從而找到一個合適的雜湊值生成區塊。
+眾所周知（例如文獻~\cite{BHT}）量子電腦在解決比特幣問題時的複雜度為 $\Theta(\sqrt N)$，
+而對於傳統的電腦而言，其複雜度則是 $\Theta(N)$ 。
+因此量子電腦在比特幣挖礦方面相比常規的電腦提升 $\sqrt{2^{68}}=2^{34}\approx 17$ 億倍的效率。
+值得一提的是，如果區塊鏈在面對雜湊運算能力增加的時候不能夠同時增加挖礦難度的話，那麼這就將導致大量孤塊的增加。
+ 
+基於相同的原因，「大權重」攻擊在量子電腦上同樣具有更高的效率。
+然而，前面所講的權重上限設置，如第~\ref{s_attacks} 節所建議的，可以有效地抵抗量子電腦的攻擊。
+在 IOTA 系統中，為發送交易而需要尋找合適的雜湊時，其尋找的 nonces 並不是很大，大概是 $3^8$ 左右。
+因此對於一個「理想」的量子電腦來說，其效率的提高也就在 $3^4=81$ 倍這個數量級，
+這相對來說是可以接受的\footnote{記住 $\Theta(\sqrt N)$ 也許意味著大概是 $10\sqrt N$}。
+更重要的是，在 IOTA 的演算法中，發送交易的時候，尋找 nonce 所需要的時間不比其他任務所需要的時間多很多，
+而後面提到的那部分任務相對來說是更容易抵抗量子電腦的，也因此比起區塊鏈(比特幣) tangle 提供更多的保護以防範量子電腦攻擊。
+ 
 
 
-
-\section*{Acknowledgements}
-The author thanks  Bartosz Kusmierz, Cyril Gr\"unspan,
-Olivia Saa, and
- Toru Kazama who pointed
-out several errors in earlier drafts, and James Brogan
-for his contributions towards making this paper more readable.
+\section*{感謝}
+感謝 Bartosz Kusmierz, Cyril Gr\"unspan,
+Olivia Saa, 和
+ Toru Kazama，指出幾處先前版本的錯誤，以及 James Brogan
+讓本篇白皮書更容易閱讀。
 
 
 
@@ -2266,5 +835,5 @@ Quantum cryptanalysis of hash and claw-free functions.
 
 
 \end{thebibliography}
-
+\end{CJK}
 \end{document}
